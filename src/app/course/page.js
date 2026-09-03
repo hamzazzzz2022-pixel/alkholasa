@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/supabase';
@@ -9,6 +11,7 @@ export default function CoursePage() {
   const searchParams = useSearchParams();
   const courseId = searchParams.get('id');
   const router = useRouter();
+  // ... باقي الكود عادي جداً
 
   const [user, setUser] = useState(null);
   const [course, setCourse] = useState(null);
