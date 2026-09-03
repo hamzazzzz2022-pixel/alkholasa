@@ -12,14 +12,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "ذاكرلي أونلاين",
-  description: "منصة تعليمية متكاملة",
+  title: "ذاكرلي أونلاين - منصة تعليمية",
+  description: "منصة ذاكرلي أونلاين لمتابعة الدروس والربط مع الطلاب",
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ar" dir="rtl" className="dark">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="ar" dir="rtl">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         {children}
       </body>
     </html>
