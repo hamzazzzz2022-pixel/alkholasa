@@ -39,13 +39,13 @@ export default function SignUpPage() {
   <div className="relative w-10 h-10 overflow-hidden rounded-full border border-slate-700/50 group-hover:border-blue-500 transition-colors duration-300">
     <img 
       src="/logo.png" 
-      alt="الخلاصة" 
+      alt="منصة الخلاصة 📃" 
       className="w-full h-full object-cover group-hover:rotate-6 transition-transform duration-300"
     />
   </div>
   
   <span className="text-xl font-bold text-blue-500 group-hover:text-blue-400 transition-colors duration-300">
-الخلاصة
+منصة الخلاصة 📃
         </span>
 </Link>
         <p className="text-center text-slate-400 text-sm mb-6">إنشاء حساب جديد للوصول لدروسك</p>
