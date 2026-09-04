@@ -36,7 +36,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
         
         <div className="text-center space-y-1">
-          <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-500">منصة ذاكرلي أونلاين 🎓</h1>
+          <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-500">منصة الخلاصة 🎓</h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">سجل دخولك لمتابعة دروسك واختباراتك</p>
         </div>
 
