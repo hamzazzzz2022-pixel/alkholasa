@@ -16,6 +16,7 @@ function CourseContent() {
   const [course, setCourse] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [activeLesson, setActiveLesson] = useState(null);
+  const [completedLessons, setCompletedLessons] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,6 +53,14 @@ function CourseContent() {
     fetchCourseData();
   }, [courseId]);
 
+  const toggleComplete = (lessonId) => {
+    if (completedLessons.includes(lessonId)) {
+      setCompletedLessons(completedLessons.filter(id => id !== lessonId));
+    } else {
+      setCompletedLessons([...completedLessons, lessonId]);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0f172a] text-white flex items-center justify-center">
@@ -71,54 +80,94 @@ function CourseContent() {
     );
   }
 
+  const progressPercentage = lessons.length > 0 ? Math.round((completedLessons.length / lessons.length) * 100) : 0;
+
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white p-6 md:p-10">
-      <div className="max-w-5xl mx-auto">
-        <Link href="/dashboard" className="text-blue-400 hover:underline mb-6 inline-block">
-          ← العودة للرئيسية
-        </Link>
+    <div className="min-h-screen bg-[#0f172a] text-white p-6 md:p-10" dir="rtl">
+      <div className="max-w-6xl mx-auto">
         
-        <div className="bg-[#1e293b] p-6 rounded-2xl shadow-lg border border-gray-800 mb-8">
-          <h1 className="text-3xl font-bold mb-3 text-white">{course.title}</h1>
-          <p className="text-gray-300 text-lg leading-relaxed">{course.description}</p>
+        {/* رأس الصفحة وشريط التقدم */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-[#1e293b] p-6 rounded-2xl border border-gray-800 shadow-lg">
+          <div>
+            <Link href="/dashboard" className="text-blue-400 hover:underline mb-2 inline-block text-sm">
+              ← العودة للرئيسية
+            </Link>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">{course.title}</h1>
+          </div>
+          <div className="w-full md:w-64 bg-gray-700 rounded-full h-4 overflow-hidden">
+            <div className="bg-green-500 h-full transition-all duration-300" style={{ width: `${progressPercentage}%` }}></div>
+            <span className="text-xs text-gray-300 block text-center mt-1">نسبة الإنجاز: {progressPercentage}%</span>
+          </div>
         </div>
 
-        {activeLesson && (
-          <div className="bg-[#1e293b] p-6 rounded-2xl shadow-lg border border-gray-800 mb-8">
-            <h2 className="text-2xl font-bold mb-4 text-blue-400">{activeLesson.title}</h2>
-            {activeLesson.video_url && (
-              <div className="mb-4">
-                <iframe 
-                  src={activeLesson.video_url} 
-                  className="w-full h-96 rounded-xl border border-gray-700"
-                  allowFullScreen
-                  title={activeLesson.title}
-                ></iframe>
+        {/* تخطيط الصفحة: محتوى الدرس على اليسار/الأعلى وقائمة الدروس على اليمين */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* محتوى الدرس الرئيسي */}
+          <div className="lg:col-span-2 space-y-6">
+            {activeLesson ? (
+              <div className="bg-[#1e293b] p-6 rounded-2xl shadow-lg border border-gray-800">
+                <h2 className="text-2xl font-bold mb-4 text-blue-400">{activeLesson.title}</h2>
+                
+                {activeLesson.video_url && (
+                  <div className="mb-6 aspect-video">
+                    <iframe 
+                      src={activeLesson.video_url} 
+                      className="w-full h-full rounded-xl border border-gray-700"
+                      allowFullScreen
+                      title={activeLesson.title}
+                    ></iframe>
+                  </div>
+                )}
+                
+                <p className="text-gray-300 leading-relaxed mb-6">{activeLesson.content || 'محتوى الدرس غير متوفر حالياً.'}</p>
+                
+                <button 
+                  onClick={() => toggleComplete(activeLesson.id)}
+                  className={`px-6 py-3 rounded-xl font-semibold transition flex items-center gap-2 ${completedLessons.includes(activeLesson.id) ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-200'}`}
+                >
+                  {completedLessons.includes(activeLesson.id) ? '✓ تم إكمال الدرس' : 'تحديد كـ مكتمل'}
+                </button>
+              </div>
+            ) : (
+              <div className="bg-[#1e293b] p-10 rounded-2xl text-center text-gray-400 border border-gray-800">
+                اختر درساً من القائمة لبدء العرض.
               </div>
             )}
-            <p className="text-gray-300 leading-relaxed">{activeLesson.content || 'اختر الدرس لبدء المشاهدة والقراءة.'}</p>
           </div>
-        )}
-        
-        <h2 className="text-2xl font-semibold mb-4 text-white">قائمة الدروس</h2>
-        <div className="space-y-3">
-          {lessons.length > 0 ? (
-            lessons.map((lesson) => (
-              <div 
-                key={lesson.id} 
-                onClick={() => setActiveLesson(lesson)}
-                className={`p-4 rounded-xl border transition cursor-pointer flex items-center justify-between ${activeLesson?.id === lesson.id ? 'bg-blue-600 border-blue-500 text-white' : 'bg-[#1e293b] hover:bg-[#273548] border-gray-800 text-gray-200'}`}
-              >
-                <span className="font-medium">{lesson.title}</span>
-                <span className="text-sm opacity-80">عرض الدرس ←</span>
-              </div>
-            ))
-          ) : (
-            <div className="p-6 bg-[#1e293b] rounded-xl text-center text-gray-400 border border-gray-800">
-              لا توجد دروس مضافة لهذا الكورس حتى الآن.
+
+          {/* قائمة الدروس الجانبية المنظمة */}
+          <div className="bg-[#1e293b] p-6 rounded-2xl shadow-lg border border-gray-800 h-fit">
+            <h3 className="text-xl font-semibold mb-4 text-white border-b border-gray-700 pb-3">قائمة الدروس</h3>
+            <div className="space-y-3">
+              {lessons.length > 0 ? (
+                lessons.map((lesson) => {
+                  const isCompleted = completedLessons.includes(lesson.id);
+                  const isActive = activeLesson?.id === lesson.id;
+                  
+                  return (
+                    <div 
+                      key={lesson.id} 
+                      onClick={() => setActiveLesson(lesson)}
+                      className={`p-3 rounded-xl border transition cursor-pointer flex items-center justify-between ${isActive ? 'bg-blue-600 border-blue-500 text-white' : 'bg-[#0f172a] hover:bg-[#273548] border-gray-800 text-gray-200'}`}
+                    >
+                      <span className="font-medium text-sm truncate max-w-[180px]">{lesson.title}</span>
+                      <span className="text-xs px-2 py-1 rounded bg-black/30">
+                        {isCompleted ? '✓ مكتمل' : 'مشاهدة'}
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center text-gray-400 py-4 text-sm">
+                  لا توجد دروس مضافة.
+                </div>
+              )}
             </div>
-          )}
+          </div>
+
         </div>
+
       </div>
     </div>
   );
