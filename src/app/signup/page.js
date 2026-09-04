@@ -39,7 +39,7 @@ export default function SignUpPage() {
   <div className="relative w-10 h-10 overflow-hidden rounded-full border border-slate-700/50 group-hover:border-blue-500 transition-colors duration-300">
     <img 
       src="/logo.png" 
-      alt="ذاكرلي أونلاين" 
+      alt="الخلاصة" 
       className="w-full h-full object-cover group-hover:rotate-6 transition-transform duration-300"
     />
   </div>
