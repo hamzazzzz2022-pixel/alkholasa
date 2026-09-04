@@ -5,7 +5,7 @@ export default function Home() {
     <div className="min-h-screen bg-slate-950 text-white dir-rtl flex flex-col justify-between">
       {/* Header */}
       <header className="p-6 flex justify-between items-center max-w-7xl mx-auto w-full">
-        <h1 className="text-2xl font-bold text-blue-500">ذاكرلي أونلاين</h1>
+        <h1 className="text-2xl font-bold text-blue-500">منصة الخلاصة</h1>
         <div className="flex gap-4 items-center">
           <Link 
             href="/login" 
