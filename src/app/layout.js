@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "منصة الخلاصة ",
   description: "منصتك التعليمية الذكية",
-};,
+};
 };
 
 export default function RootLayout({ children }) {
