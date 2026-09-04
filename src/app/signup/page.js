@@ -45,8 +45,8 @@ export default function SignUpPage() {
   </div>
   
   <span className="text-xl font-bold text-blue-500 group-hover:text-blue-400 transition-colors duration-300">
-    ذاكرلي أونلاين
-  </span>
+الخلاصة
+        </span>
 </Link>
         <p className="text-center text-slate-400 text-sm mb-6">إنشاء حساب جديد للوصول لدروسك</p>
 
