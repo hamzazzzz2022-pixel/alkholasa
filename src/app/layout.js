@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "الخُلاصة",
+  title: "منصة الخلاصة 📃",
   description: "منصتك التعليمية الذكية",
 };
 
