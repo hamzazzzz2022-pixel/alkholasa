@@ -15,6 +15,7 @@ function CourseContent() {
 
   const [course, setCourse] = useState(null);
   const [lessons, setLessons] = useState([]);
+  const [activeLesson, setActiveLesson] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,8 +38,9 @@ function CourseContent() {
           .select('*')
           .eq('course_id', courseId);
 
-        if (!lessonsError) {
-          setLessons(lessonsData || []);
+        if (!lessonsError && lessonsData.length > 0) {
+          setLessons(lessonsData);
+          setActiveLesson(lessonsData[0]);
         }
       } catch (err) {
         console.error('خطأ في جلب بيانات الكورس:', err.message);
@@ -71,7 +73,7 @@ function CourseContent() {
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-white p-6 md:p-10">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <Link href="/dashboard" className="text-blue-400 hover:underline mb-6 inline-block">
           ← العودة للرئيسية
         </Link>
@@ -80,13 +82,35 @@ function CourseContent() {
           <h1 className="text-3xl font-bold mb-3 text-white">{course.title}</h1>
           <p className="text-gray-300 text-lg leading-relaxed">{course.description}</p>
         </div>
+
+        {activeLesson && (
+          <div className="bg-[#1e293b] p-6 rounded-2xl shadow-lg border border-gray-800 mb-8">
+            <h2 className="text-2xl font-bold mb-4 text-blue-400">{activeLesson.title}</h2>
+            {activeLesson.video_url && (
+              <div className="mb-4">
+                <iframe 
+                  src={activeLesson.video_url} 
+                  className="w-full h-96 rounded-xl border border-gray-700"
+                  allowFullScreen
+                  title={activeLesson.title}
+                ></iframe>
+              </div>
+            )}
+            <p className="text-gray-300 leading-relaxed">{activeLesson.content || 'اختر الدرس لبدء المشاهدة والقراءة.'}</p>
+          </div>
+        )}
         
         <h2 className="text-2xl font-semibold mb-4 text-white">قائمة الدروس</h2>
         <div className="space-y-3">
           {lessons.length > 0 ? (
             lessons.map((lesson) => (
-              <div key={lesson.id} className="p-4 bg-[#1e293b] hover:bg-[#273548] border border-gray-800 rounded-xl transition flex items-center justify-between">
-                <span className="font-medium text-gray-200">{lesson.title}</span>
+              <div 
+                key={lesson.id} 
+                onClick={() => setActiveLesson(lesson)}
+                className={`p-4 rounded-xl border transition cursor-pointer flex items-center justify-between ${activeLesson?.id === lesson.id ? 'bg-blue-600 border-blue-500 text-white' : 'bg-[#1e293b] hover:bg-[#273548] border-gray-800 text-gray-200'}`}
+              >
+                <span className="font-medium">{lesson.title}</span>
+                <span className="text-sm opacity-80">عرض الدرس ←</span>
               </div>
             ))
           ) : (
