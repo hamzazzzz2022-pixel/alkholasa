@@ -2,8 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { Suspense } from 'react';
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/supabase';
 import Link from 'next/link';
@@ -18,6 +17,7 @@ function CourseContent() {
   const [activeLesson, setActiveLesson] = useState(null);
   const [completedLessons, setCompletedLessons] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
     async function fetchCourseData() {
@@ -25,6 +25,24 @@ function CourseContent() {
       
       try {
         setLoading(true);
+        
+        // جلب المستخدم الحالي
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setUserId(session.user.id);
+          
+          // جلب الدروس المكتملة الخاصة بالمستخدم لهذا الكورس من قاعدة البيانات
+          const { data: progressData } = await supabase
+            .from('user_progress')
+            .select('lesson_id')
+            .eq('user_id', session.user.id)
+            .eq('course_id', courseId);
+            
+          if (progressData) {
+            setCompletedLessons(progressData.map(p => p.lesson_id));
+          }
+        }
+
         const { data: courseData, error: courseError } = await supabase
           .from('courses')
           .select('*')
@@ -53,14 +71,33 @@ function CourseContent() {
     fetchCourseData();
   }, [courseId]);
 
-  const toggleComplete = (lessonId) => {
-    setCompletedLessons(prev => {
-      if (prev.includes(lessonId)) {
-        return prev.filter(id => id !== lessonId);
-      } else {
-        return [...prev, lessonId];
-      }
-    });
+  // تحديث حالة الإتمام وحفظها في Supabase
+  const toggleComplete = async (lessonId) => {
+    if (!userId) {
+      alert('يجب تسجيل الدخول لحفظ تقدمك!');
+      router.push('/login');
+      return;
+    }
+
+    const isAlreadyCompleted = completedLessons.includes(lessonId);
+
+    if (isAlreadyCompleted) {
+      // إزالة الإتمام من قاعدة البيانات
+      setCompletedLessons(prev => prev.filter(id => id !== lessonId));
+      await supabase
+        .from('user_progress')
+        .delete()
+        .eq('user_id', userId)
+        .eq('lesson_id', lessonId);
+    } else {
+      // إضافة الإتمام لقاعدة البيانات
+      setCompletedLessons(prev => [...prev, lessonId]);
+      await supabase
+        .from('user_progress')
+        .insert([
+          { user_id: userId, lesson_id: lessonId, course_id: courseId }
+        ]);
+    }
   };
 
   if (loading) {
@@ -145,7 +182,7 @@ function CourseContent() {
                     : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
                 }`}
               >
-                {isCurrentCompleted ? '✓ 'اكتملت المشاهدة' : 'اضغط اكتملت المشاهدة' }
+                {isCurrentCompleted ? '✓ اكتملت المشاهدة' : 'اضغط اكتملت المشاهدة'}
               </button>
             </div>
             
