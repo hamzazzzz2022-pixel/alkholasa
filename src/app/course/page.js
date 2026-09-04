@@ -54,11 +54,13 @@ function CourseContent() {
   }, [courseId]);
 
   const toggleComplete = (lessonId) => {
-    if (completedLessons.includes(lessonId)) {
-      setCompletedLessons(completedLessons.filter(id => id !== lessonId));
-    } else {
-      setCompletedLessons([...completedLessons, lessonId]);
-    }
+    setCompletedLessons(prev => {
+      if (prev.includes(lessonId)) {
+        return prev.filter(id => id !== lessonId);
+      } else {
+        return [...prev, lessonId];
+      }
+    });
   };
 
   if (loading) {
@@ -80,13 +82,13 @@ function CourseContent() {
     );
   }
 
+  const isCurrentCompleted = activeLesson ? completedLessons.includes(activeLesson.id) : false;
   const progressPercentage = lessons.length > 0 ? Math.round((completedLessons.length / lessons.length) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-white p-6 md:p-10" dir="rtl">
       <div className="max-w-4xl mx-auto space-y-6">
         
-        {/* زر العودة وعنوان الكورس */}
         <div className="bg-[#1e293b] p-6 rounded-2xl border border-gray-800 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <Link href="/dashboard" className="text-blue-400 hover:underline mb-2 inline-block text-sm">
@@ -97,11 +99,10 @@ function CourseContent() {
           </div>
           <div className="w-full md:w-48 bg-gray-700 rounded-full h-3 overflow-hidden">
             <div className="bg-green-500 h-full transition-all duration-300" style={{ width: `${progressPercentage}%` }}></div>
-            <span className="text-xs text-gray-300 block text-center mt-1">النسبة: {progressPercentage}%</span>
+            <span className="text-xs text-gray-300 block text-center mt-1">النسبة: {progressPercentage}% ({completedLessons.length}/{lessons.length})</span>
           </div>
         </div>
 
-        {/* 1. قائمة الدروس فوق (بشكل أزرار أفقية أو شبكة منظمة) */}
         <div className="bg-[#1e293b] p-6 rounded-2xl border border-gray-800 shadow-lg">
           <h3 className="text-lg font-semibold mb-3 text-gray-200">قائمة دروس الكورس</h3>
           <div className="flex flex-wrap gap-2">
@@ -131,22 +132,20 @@ function CourseContent() {
           </div>
         </div>
 
-        {/* 2. محتوى الدرس المختار والفيديو وزر اكتملت المشاهدة */}
         {activeLesson ? (
           <div className="bg-[#1e293b] p-6 md:p-8 rounded-2xl shadow-xl border border-gray-800 space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-700 pb-4">
               <h2 className="text-2xl font-bold text-blue-400">{activeLesson.title}</h2>
               
-              {/* زر اكتملت المشاهدة */}
               <button 
                 onClick={() => toggleComplete(activeLesson.id)}
                 className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition flex items-center gap-2 ${
-                  completedLessons.includes(activeLesson.id) 
+                  isCurrentCompleted 
                     ? 'bg-green-600 hover:bg-green-700 text-white' 
                     : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
                 }`}
               >
-                {completedLessons.includes(activeLesson.id) ? '✓ اكتملت المشاهدة' : 'تحديد كـ اكتملت المشاهدة'}
+                {isCurrentCompleted ? '✓ اكتملت المشاهدة' : 'تحديد كـ اكتملت المشاهدة'}
               </button>
             </div>
             
