@@ -145,7 +145,7 @@ function CourseContent() {
                     : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
                 }`}
               >
-                {isCurrentCompleted ? '✓ اكتملت المشاهدة' : 'اضغط اكتملت المشاهدة }
+                {isCurrentCompleted ? '✓ 'اكتملت المشاهدة' : 'اضغط اكتملت المشاهدة' }
               </button>
             </div>
             
