@@ -57,7 +57,7 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-lg transition-colors duration-200">
           <div>
-            <h1 className="text-lg font-bold text-blue-600 dark:text-blue-500">منصة ذاكرلي أونلاين 🎓</h1>
+            <h1 className="text-lg font-bold text-blue-600 dark:text-blue-500">منصة الخلاصة🎓</h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">مرحباً بك، {user?.email}</p>
           </div>
 
