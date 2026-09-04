@@ -84,89 +84,93 @@ function CourseContent() {
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-white p-6 md:p-10" dir="rtl">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-4xl mx-auto space-y-6">
         
-        {/* رأس الصفحة وشريط التقدم */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-[#1e293b] p-6 rounded-2xl border border-gray-800 shadow-lg">
+        {/* زر العودة وعنوان الكورس */}
+        <div className="bg-[#1e293b] p-6 rounded-2xl border border-gray-800 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <Link href="/dashboard" className="text-blue-400 hover:underline mb-2 inline-block text-sm">
               ← العودة للرئيسية
             </Link>
             <h1 className="text-2xl md:text-3xl font-bold text-white">{course.title}</h1>
+            <p className="text-gray-300 mt-1 text-sm">{course.description}</p>
           </div>
-          <div className="w-full md:w-64 bg-gray-700 rounded-full h-4 overflow-hidden">
+          <div className="w-full md:w-48 bg-gray-700 rounded-full h-3 overflow-hidden">
             <div className="bg-green-500 h-full transition-all duration-300" style={{ width: `${progressPercentage}%` }}></div>
-            <span className="text-xs text-gray-300 block text-center mt-1">نسبة الإنجاز: {progressPercentage}%</span>
+            <span className="text-xs text-gray-300 block text-center mt-1">النسبة: {progressPercentage}%</span>
           </div>
         </div>
 
-        {/* تخطيط الصفحة: محتوى الدرس على اليسار/الأعلى وقائمة الدروس على اليمين */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* محتوى الدرس الرئيسي */}
-          <div className="lg:col-span-2 space-y-6">
-            {activeLesson ? (
-              <div className="bg-[#1e293b] p-6 rounded-2xl shadow-lg border border-gray-800">
-                <h2 className="text-2xl font-bold mb-4 text-blue-400">{activeLesson.title}</h2>
+        {/* 1. قائمة الدروس فوق (بشكل أزرار أفقية أو شبكة منظمة) */}
+        <div className="bg-[#1e293b] p-6 rounded-2xl border border-gray-800 shadow-lg">
+          <h3 className="text-lg font-semibold mb-3 text-gray-200">قائمة دروس الكورس</h3>
+          <div className="flex flex-wrap gap-2">
+            {lessons.length > 0 ? (
+              lessons.map((lesson) => {
+                const isCompleted = completedLessons.includes(lesson.id);
+                const isActive = activeLesson?.id === lesson.id;
                 
-                {activeLesson.video_url && (
-                  <div className="mb-6 aspect-video">
-                    <iframe 
-                      src={activeLesson.video_url} 
-                      className="w-full h-full rounded-xl border border-gray-700"
-                      allowFullScreen
-                      title={activeLesson.title}
-                    ></iframe>
-                  </div>
-                )}
-                
-                <p className="text-gray-300 leading-relaxed mb-6">{activeLesson.content || 'محتوى الدرس غير متوفر حالياً.'}</p>
-                
-                <button 
-                  onClick={() => toggleComplete(activeLesson.id)}
-                  className={`px-6 py-3 rounded-xl font-semibold transition flex items-center gap-2 ${completedLessons.includes(activeLesson.id) ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-200'}`}
-                >
-                  {completedLessons.includes(activeLesson.id) ? '✓ تم إكمال الدرس' : 'تحديد كـ مكتمل'}
-                </button>
-              </div>
+                return (
+                  <button 
+                    key={lesson.id} 
+                    onClick={() => setActiveLesson(lesson)}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition border flex items-center gap-2 ${
+                      isActive 
+                        ? 'bg-blue-600 border-blue-500 text-white shadow-md' 
+                        : 'bg-[#0f172a] hover:bg-[#273548] border-gray-700 text-gray-300'
+                    }`}
+                  >
+                    <span>{lesson.title}</span>
+                    {isCompleted && <span className="text-green-400 text-xs">✓</span>}
+                  </button>
+                );
+              })
             ) : (
-              <div className="bg-[#1e293b] p-10 rounded-2xl text-center text-gray-400 border border-gray-800">
-                اختر درساً من القائمة لبدء العرض.
-              </div>
+              <p className="text-gray-400 text-sm">لا توجد دروس مضافة.</p>
             )}
           </div>
+        </div>
 
-          {/* قائمة الدروس الجانبية المنظمة */}
-          <div className="bg-[#1e293b] p-6 rounded-2xl shadow-lg border border-gray-800 h-fit">
-            <h3 className="text-xl font-semibold mb-4 text-white border-b border-gray-700 pb-3">قائمة الدروس</h3>
-            <div className="space-y-3">
-              {lessons.length > 0 ? (
-                lessons.map((lesson) => {
-                  const isCompleted = completedLessons.includes(lesson.id);
-                  const isActive = activeLesson?.id === lesson.id;
-                  
-                  return (
-                    <div 
-                      key={lesson.id} 
-                      onClick={() => setActiveLesson(lesson)}
-                      className={`p-3 rounded-xl border transition cursor-pointer flex items-center justify-between ${isActive ? 'bg-blue-600 border-blue-500 text-white' : 'bg-[#0f172a] hover:bg-[#273548] border-gray-800 text-gray-200'}`}
-                    >
-                      <span className="font-medium text-sm truncate max-w-[180px]">{lesson.title}</span>
-                      <span className="text-xs px-2 py-1 rounded bg-black/30">
-                        {isCompleted ? '✓ مكتمل' : 'مشاهدة'}
-                      </span>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="text-center text-gray-400 py-4 text-sm">
-                  لا توجد دروس مضافة.
-                </div>
-              )}
+        {/* 2. محتوى الدرس المختار والفيديو وزر اكتملت المشاهدة */}
+        {activeLesson ? (
+          <div className="bg-[#1e293b] p-6 md:p-8 rounded-2xl shadow-xl border border-gray-800 space-y-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-700 pb-4">
+              <h2 className="text-2xl font-bold text-blue-400">{activeLesson.title}</h2>
+              
+              {/* زر اكتملت المشاهدة */}
+              <button 
+                onClick={() => toggleComplete(activeLesson.id)}
+                className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition flex items-center gap-2 ${
+                  completedLessons.includes(activeLesson.id) 
+                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                    : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+                }`}
+              >
+                {completedLessons.includes(activeLesson.id) ? '✓ اكتملت المشاهدة' : 'تحديد كـ اكتملت المشاهدة'}
+              </button>
+            </div>
+            
+            {activeLesson.video_url && (
+              <div className="aspect-video w-full">
+                <iframe 
+                  src={activeLesson.video_url} 
+                  className="w-full h-full rounded-xl border border-gray-700"
+                  allowFullScreen
+                  title={activeLesson.title}
+                ></iframe>
+              </div>
+            )}
+            
+            <div className="text-gray-300 leading-relaxed bg-[#0f172a] p-4 rounded-xl border border-gray-800">
+              <h4 className="font-semibold text-white mb-2">محتوى الدرس:</h4>
+              <p>{activeLesson.content || 'لا يوجد وصف نصي إضافي لهذا الدرس.'}</p>
             </div>
           </div>
-
-        </div>
+        ) : (
+          <div className="bg-[#1e293b] p-10 rounded-2xl text-center text-gray-400 border border-gray-800">
+            اختر درساً من القائمة بالأعلى لعرض المحتوى.
+          </div>
+        )}
 
       </div>
     </div>
