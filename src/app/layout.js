@@ -12,8 +12,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "ذاكرلي أونلاين - منصة تعليمية",
-  description: "منصة ذاكرلي أونلاين لمتابعة الدروس والربط مع الطلاب",
+  title: "منصة الخلاصة ",
+  description: "منصتك التعليمية الذكية",
+};,
 };
 
 export default function RootLayout({ children }) {
