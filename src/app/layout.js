@@ -12,8 +12,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "الخُلاصة",
-  description: "منصتك التعليمية الذكية",
+  title:"الخُلاصة",
+  description:"منصتك التعليمية الذكية",
 };
 };
 
