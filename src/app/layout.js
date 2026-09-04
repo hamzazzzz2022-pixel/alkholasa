@@ -12,7 +12,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "منصة الخلاصة ",
+  title: "الخُلاصة في الفراسة",
   description: "منصتك التعليمية الذكية",
 };
 };
