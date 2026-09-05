@@ -34,7 +34,6 @@ function CourseContent() {
 
         if (session) {
           setUserId(session.user.id);
-          console.log('المستخدم مسجل الدخول برقم:', session.user.id);
           
           // جلب الدروس المكتملة الخاصة بالمستخدم من جدول user_progress
           const { data: progressData, error: progError } = await supabase
@@ -45,11 +44,8 @@ function CourseContent() {
           if (progError) {
             console.error('خطأ في جلب التقدم من قاعدة البيانات:', progError.message);
           } else if (progressData) {
-            console.log('الدروس المكتملة المسترجعة:', progressData);
             setCompletedLessons(progressData.map(p => p.lesson_id));
           }
-        } else {
-          console.warn('لا يوجد مسجل دخول حالياً!');
         }
 
         const { data: courseData, error: courseError } = await supabase
@@ -80,10 +76,8 @@ function CourseContent() {
     fetchCourseData();
   }, [courseId]);
 
-  // تحديث حالة الإتمام وحفظها في Supabase مع تتبع الأخطاء بدقة
+  // تحديث حالة الإتمام وحفظها في Supabase باستخدام upsert لمنع أخطاء التكرار
   const toggleComplete = async (lessonId) => {
-    console.log('تم الضغط على زر الإتمام. المستخدم:', userId, 'رقم الدرس:', lessonId);
-
     if (!userId) {
       alert('يجب تسجيل الدخول لحفظ تقدمك!');
       router.push('/login');
@@ -104,24 +98,20 @@ function CourseContent() {
         
       if (error) {
         console.error('خطأ أثناء حذف التقدم:', error.message);
-      } else {
-        console.log('تم حذف إتمام الدرس بنجاح من القاعدة.');
       }
     } else {
-      // إضافة الإتمام لقاعدة البيانات
+      // إضافة أو تحديث الإتمام لقاعدة البيانات باستخدام upsert
       setCompletedLessons(prev => [...prev, lessonId]);
       
       const { error } = await supabase
         .from('user_progress')
-        insert([
+        .upsert([
           { user_id: userId, lesson_id: lessonId, is_completed: true }
-        ]);
+        ], { onConflict: 'user_id, lesson_id' });
         
       if (error) {
         console.error('خطأ أثناء إدخال التقدم لقاعدة البيانات:', error.message);
         alert('حدث خطأ أثناء حفظ التقدم: ' + error.message);
-      } else {
-        console.log('تم حفظ إتمام الدرس بنجاح في القاعدة.');
       }
     }
   };
