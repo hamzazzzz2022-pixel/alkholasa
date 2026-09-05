@@ -31,14 +31,15 @@ function CourseContent() {
         if (session) {
           setUserId(session.user.id);
           
-          // جلب الدروس المكتملة الخاصة بالمستخدم لهذا الكورس من قاعدة البيانات
-          const { data: progressData } = await supabase
+          // جلب الدروس المكتملة بناءً على الـ user_id فقط بدون حقول إضافية تسبب أخطاء
+          const { data: progressData, error: progError } = await supabase
             .from('user_progress')
             .select('lesson_id')
-            .eq('user_id', session.user.id)
-            .eq('course_id', courseId);
+            .eq('user_id', session.user.id);
             
-          if (progressData) {
+          if (progError) {
+            console.error('خطأ في جلب التقدم:', progError.message);
+          } else if (progressData) {
             setCompletedLessons(progressData.map(p => p.lesson_id));
           }
         }
@@ -71,7 +72,7 @@ function CourseContent() {
     fetchCourseData();
   }, [courseId]);
 
-  // تحديث حالة الإتمام وحفظها في Supabase
+  // تحديث حالة الإتمام وحفظها في Supabase بدون أخطاء
   const toggleComplete = async (lessonId) => {
     if (!userId) {
       alert('يجب تسجيل الدخول لحفظ تقدمك!');
@@ -84,19 +85,26 @@ function CourseContent() {
     if (isAlreadyCompleted) {
       // إزالة الإتمام من قاعدة البيانات
       setCompletedLessons(prev => prev.filter(id => id !== lessonId));
-      await supabase
+      const { error } = await supabase
         .from('user_progress')
         .delete()
         .eq('user_id', userId)
         .eq('lesson_id', lessonId);
+        
+      if (error) console.error('خطأ أثناء الحذف:', error.message);
     } else {
       // إضافة الإتمام لقاعدة البيانات
       setCompletedLessons(prev => [...prev, lessonId]);
-      await supabase
+      const { error } = await supabase
         .from('user_progress')
         .insert([
-          { user_id: userId, lesson_id: lessonId, course_id: courseId }
+          { user_id: userId, lesson_id: lessonId, is_completed: true }
         ]);
+        
+      if (error) {
+        console.error('خطأ أثناء الإضافة:', error.message);
+        alert('حدث خطأ أثناء حفظ التقدم: ' + error.message);
+      }
     }
   };
 
