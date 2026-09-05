@@ -19,6 +19,11 @@ function CourseContent() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
 
+  // حالات الكويز والسؤال للدرس الحالي
+  const [quiz, setQuiz] = useState(null);
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
+
   useEffect(() => {
     async function fetchCourseData() {
       if (!courseId) return;
@@ -60,7 +65,8 @@ function CourseContent() {
         const { data: lessonsData, error: lessonsError } = await supabase
           .from('lessons')
           .select('*')
-          .eq('course_id', courseId);
+          .eq('course_id', courseId)
+          .order('id', { ascending: true });
 
         if (!lessonsError && lessonsData.length > 0) {
           setLessons(lessonsData);
@@ -76,7 +82,29 @@ function CourseContent() {
     fetchCourseData();
   }, [courseId]);
 
-  // تحديث حالة الإتمام وحفظها في Supabase باستخدام upsert لمنع أخطاء التكرار
+  // جلب الكويز المرتبط بالدرس الحالي كلما تغير الدرس النشط
+  useEffect(() => {
+    async function fetchQuizForLesson() {
+      if (!activeLesson) return;
+      setQuiz(null);
+      setSelectedOption(null);
+      setIsAnswerSubmitted(false);
+
+      const { data, error } = await supabase
+        .from('quizzes')
+        .select('*')
+        .eq('lesson_id', activeLesson.id)
+        .maybeSingle();
+
+      if (!error && data) {
+        setQuiz(data);
+      }
+    }
+
+    fetchQuizForLesson();
+  }, [activeLesson]);
+
+  // تحديث حالة الإتمام وحفظها في Supabase باستخدام upsert
   const toggleComplete = async (lessonId) => {
     if (!userId) {
       alert('يجب تسجيل الدخول لحفظ تقدمك!');
@@ -87,7 +115,6 @@ function CourseContent() {
     const isAlreadyCompleted = completedLessons.includes(lessonId);
 
     if (isAlreadyCompleted) {
-      // إزالة الإتمام من قاعدة البيانات
       setCompletedLessons(prev => prev.filter(id => id !== lessonId));
       
       const { error } = await supabase
@@ -100,7 +127,6 @@ function CourseContent() {
         console.error('خطأ أثناء حذف التقدم:', error.message);
       }
     } else {
-      // إضافة أو تحديث الإتمام لقاعدة البيانات باستخدام upsert
       setCompletedLessons(prev => [...prev, lessonId]);
       
       const { error } = await supabase
@@ -217,6 +243,58 @@ function CourseContent() {
               <h4 className="font-semibold text-white mb-2">محتوى الدرس:</h4>
               <p>{activeLesson.content || 'لا يوجد وصف نصي إضافي لهذا الدرس.'}</p>
             </div>
+
+            {/* قسم الكويز والاختبار التفاعلي للدرس */}
+            {quiz && (
+              <div className="bg-[#0f172a] p-6 rounded-xl border border-blue-900/50 space-y-4">
+                <h4 className="text-base font-bold text-green-400">📝 اختبار قصير للدرس:</h4>
+                <p className="text-sm font-medium text-white">{quiz.question}</p>
+
+                <div className="space-y-2">
+                  {quiz.options && quiz.options.map((option, idx) => {
+                    let btnStyle = "bg-[#1e293b] hover:bg-slate-800 text-gray-200 border-gray-700";
+                    if (isAnswerSubmitted) {
+                      if (idx === quiz.correct_option_index) {
+                        btnStyle = "bg-green-600/30 border-green-500 text-green-300";
+                      } else if (idx === selectedOption) {
+                        btnStyle = "bg-red-600/30 border-red-500 text-red-300";
+                      }
+                    } else if (selectedOption === idx) {
+                      btnStyle = "bg-blue-600/30 border-blue-500 text-blue-300";
+                    }
+
+                    return (
+                      <button
+                        key={idx}
+                        disabled={isAnswerSubmitted}
+                        onClick={() => setSelectedOption(idx)}
+                        className={`w-full text-right p-3 rounded-xl border text-sm transition ${btnStyle}`}
+                      >
+                        <span className="font-bold ml-2">{idx + 1}.</span> {option}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {!isAnswerSubmitted ? (
+                  <button
+                    disabled={selectedOption === null}
+                    onClick={() => setIsAnswerSubmitted(true)}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-sm transition"
+                  >
+                    تأكيد الإجابة
+                  </button>
+                ) : (
+                  <div className="text-center p-3 rounded-xl text-sm font-bold">
+                    {selectedOption === quiz.correct_option_index ? (
+                      <p className="text-green-400">إجابة صحيحة أحسنت! 🎉</p>
+                    ) : (
+                      <p className="text-red-400">إجابة خاطئة، الإجابة الصحيحة هي الخيار رقم ({quiz.correct_option_index + 1}) ❌</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="bg-[#1e293b] p-10 rounded-2xl text-center text-gray-400 border border-gray-800">
