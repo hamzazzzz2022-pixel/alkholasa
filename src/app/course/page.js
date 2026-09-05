@@ -26,22 +26,30 @@ function CourseContent() {
       try {
         setLoading(true);
         
-        // جلب المستخدم الحالي
-        const { data: { session } } = await supabase.auth.getSession();
+        // جلب المستخدم الحالي وحالة الجلسة
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          console.error('خطأ في جلسة المستخدم:', sessionError.message);
+        }
+
         if (session) {
           setUserId(session.user.id);
+          console.log('المستخدم مسجل الدخول برقم:', session.user.id);
           
-          // جلب الدروس المكتملة بناءً على الـ user_id فقط بدون حقول إضافية تسبب أخطاء
+          // جلب الدروس المكتملة الخاصة بالمستخدم من جدول user_progress
           const { data: progressData, error: progError } = await supabase
             .from('user_progress')
             .select('lesson_id')
             .eq('user_id', session.user.id);
             
           if (progError) {
-            console.error('خطأ في جلب التقدم:', progError.message);
+            console.error('خطأ في جلب التقدم من قاعدة البيانات:', progError.message);
           } else if (progressData) {
+            console.log('الدروس المكتملة المسترجعة:', progressData);
             setCompletedLessons(progressData.map(p => p.lesson_id));
           }
+        } else {
+          console.warn('لا يوجد مسجل دخول حالياً!');
         }
 
         const { data: courseData, error: courseError } = await supabase
@@ -63,7 +71,7 @@ function CourseContent() {
           setActiveLesson(lessonsData[0]);
         }
       } catch (err) {
-        console.error('خطأ في جلب بيانات الكورس:', err.message);
+        console.error('خطأ عام في جلب بيانات الكورس:', err.message);
       } finally {
         setLoading(false);
       }
@@ -72,8 +80,10 @@ function CourseContent() {
     fetchCourseData();
   }, [courseId]);
 
-  // تحديث حالة الإتمام وحفظها في Supabase بدون أخطاء
+  // تحديث حالة الإتمام وحفظها في Supabase مع تتبع الأخطاء بدقة
   const toggleComplete = async (lessonId) => {
+    console.log('تم الضغط على زر الإتمام. المستخدم:', userId, 'رقم الدرس:', lessonId);
+
     if (!userId) {
       alert('يجب تسجيل الدخول لحفظ تقدمك!');
       router.push('/login');
@@ -85,25 +95,33 @@ function CourseContent() {
     if (isAlreadyCompleted) {
       // إزالة الإتمام من قاعدة البيانات
       setCompletedLessons(prev => prev.filter(id => id !== lessonId));
+      
       const { error } = await supabase
         .from('user_progress')
         .delete()
         .eq('user_id', userId)
         .eq('lesson_id', lessonId);
         
-      if (error) console.error('خطأ أثناء الحذف:', error.message);
+      if (error) {
+        console.error('خطأ أثناء حذف التقدم:', error.message);
+      } else {
+        console.log('تم حذف إتمام الدرس بنجاح من القاعدة.');
+      }
     } else {
       // إضافة الإتمام لقاعدة البيانات
       setCompletedLessons(prev => [...prev, lessonId]);
+      
       const { error } = await supabase
         .from('user_progress')
-        .insert([
+        insert([
           { user_id: userId, lesson_id: lessonId, is_completed: true }
         ]);
         
       if (error) {
-        console.error('خطأ أثناء الإضافة:', error.message);
+        console.error('خطأ أثناء إدخال التقدم لقاعدة البيانات:', error.message);
         alert('حدث خطأ أثناء حفظ التقدم: ' + error.message);
+      } else {
+        console.log('تم حفظ إتمام الدرس بنجاح في القاعدة.');
       }
     }
   };
