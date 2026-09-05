@@ -19,10 +19,15 @@ function CourseContent() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
 
-  // حالات الكويز والسؤال للدرس الحالي
+  // حالات الكويز
   const [quiz, setQuiz] = useState(null);
   const [selectedOption, setSelectedOption] = useState(null);
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
+
+  // حالات قسم الملاحظات الشخصية
+  const [noteContent, setNoteContent] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
+  const [noteMessage, setNoteMessage] = useState('');
 
   useEffect(() => {
     async function fetchCourseData() {
@@ -31,7 +36,7 @@ function CourseContent() {
       try {
         setLoading(true);
         
-        // جلب المستخدم الحالي وحالة الجلسة
+        // جلب المستخدم الحالي
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) {
           console.error('خطأ في جلسة المستخدم:', sessionError.message);
@@ -40,15 +45,13 @@ function CourseContent() {
         if (session) {
           setUserId(session.user.id);
           
-          // جلب الدروس المكتملة الخاصة بالمستخدم من جدول user_progress
+          // جلب الدروس المكتملة
           const { data: progressData, error: progError } = await supabase
             .from('user_progress')
             .select('lesson_id')
             .eq('user_id', session.user.id);
             
-          if (progError) {
-            console.error('خطأ في جلب التقدم من قاعدة البيانات:', progError.message);
-          } else if (progressData) {
+          if (!progError && progressData) {
             setCompletedLessons(progressData.map(p => p.lesson_id));
           }
         }
@@ -82,42 +85,81 @@ function CourseContent() {
     fetchCourseData();
   }, [courseId]);
 
-  // جلب الكويز المرتبط بالدرس النشط حالياً
+  // جلب الكويز والملاحظة الخاصة بالدرس النشط كلما تغير الدرس
   useEffect(() => {
-    async function fetchQuizForLesson() {
+    async function fetchLessonDetails() {
       if (!activeLesson) return;
+      
+      // تصفير الحالات عند الانتقال لدرس جديد
       setQuiz(null);
       setSelectedOption(null);
       setIsAnswerSubmitted(false);
+      setNoteContent('');
+      setNoteMessage('');
 
-      // جلب السؤال المطابق لـ lesson_id للدرس الحالي، أو جلب أول سؤال متوفر كبديل لو أردت ضمان ظهوره
-      const { data, error } = await supabase
+      // 1. جلب الكويز
+      const { data: quizData } = await supabase
         .from('quizzes')
         .select('*')
         .eq('lesson_id', activeLesson.id)
         .maybeSingle();
 
-      if (!error && data) {
-        setQuiz(data);
-      } else {
-        // حل احتياطي: لو لم يوجد تطابق بالرقم، جلب أحدث سؤال متاح لكي يظهر للتجربة
-        const { data: fallbackData } = await supabase
-          .from('quizzes')
-          .select('*')
-          .order('id', { ascending: false })
-          .limit(1)
+      if (quizData) {
+        setQuiz(quizData);
+      }
+
+      // 2. جلب ملاحظة الطالب لهذا الدرس إن وجدت
+      if (userId) {
+        const { data: noteData } = await supabase
+          .from('notes')
+          .select('content')
+          .eq('user_id', userId)
+          .eq('lesson_id', activeLesson.id)
           .maybeSingle();
 
-        if (fallbackData) {
-          setQuiz(fallbackData);
+        if (noteData) {
+          setNoteContent(noteData.content);
         }
       }
     }
 
-    fetchQuizForLesson();
-  }, [activeLesson]);
+    fetchLessonDetails();
+  }, [activeLesson, userId]);
 
-  // تحديث حالة الإتمام وحفظها في Supabase باستخدام upsert
+  // حفظ أو تحديث الملاحظة في قاعدة البيانات
+  const handleSaveNote = async () => {
+    if (!userId) {
+      alert('يجب تسجيل الدخول لحفظ ملاحظاتك!');
+      router.push('/login');
+      return;
+    }
+
+    setSavingNote(true);
+    setNoteMessage('');
+
+    const { error } = await supabase
+      .from('notes')
+      .upsert([
+        { 
+          user_id: userId, 
+          lesson_id: activeLesson.id, 
+          content: noteContent,
+          updated_at: new Date()
+        }
+      ], { onConflict: 'user_id, lesson_id' });
+
+    setSavingNote(false);
+
+    if (error) {
+      console.error('خطأ في حفظ الملاحظة:', error.message);
+      setNoteMessage('حدث خطأ أثناء حفظ الملاحظة ❌');
+    } else {
+      setNoteMessage('تم حفظ الملاحظة بنجاح! ✓');
+      setTimeout(() => setNoteMessage(''), 3000);
+    }
+  };
+
+  // تحديث حالة إتمام الدرس
   const toggleComplete = async (lessonId) => {
     if (!userId) {
       alert('يجب تسجيل الدخول لحفظ تقدمك!');
@@ -129,29 +171,12 @@ function CourseContent() {
 
     if (isAlreadyCompleted) {
       setCompletedLessons(prev => prev.filter(id => id !== lessonId));
-      
-      const { error } = await supabase
-        .from('user_progress')
-        .delete()
-        .eq('user_id', userId)
-        .eq('lesson_id', lessonId);
-        
-      if (error) {
-        console.error('خطأ أثناء حذف التقدم:', error.message);
-      }
+      await supabase.from('user_progress').delete().eq('user_id', userId).eq('lesson_id', lessonId);
     } else {
       setCompletedLessons(prev => [...prev, lessonId]);
-      
-      const { error } = await supabase
-        .from('user_progress')
-        .upsert([
-          { user_id: userId, lesson_id: lessonId, is_completed: true }
-        ], { onConflict: 'user_id, lesson_id' });
-        
-      if (error) {
-        console.error('خطأ أثناء إدخال التقدم لقاعدة البيانات:', error.message);
-        alert('حدث خطأ أثناء حفظ التقدم: ' + error.message);
-      }
+      await supabase.from('user_progress').upsert([
+        { user_id: userId, lesson_id: lessonId, is_completed: true }
+      ], { onConflict: 'user_id, lesson_id' });
     }
   };
 
@@ -166,7 +191,7 @@ function CourseContent() {
   if (!course) {
     return (
       <div className="min-h-screen bg-[#0f172a] text-white flex flex-col items-center justify-center p-6">
-        <div className="text-red-400 text-xl mb-4">عذراً، هذا الكورس غير موجود أو تم حذفه.</div>
+        <div className="text-red-400 text-xl mb-4">عذراً، هذا الكورس غير موجود.</div>
         <Link href="/dashboard" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition">
           العودة لوحة التحكم
         </Link>
@@ -181,6 +206,7 @@ function CourseContent() {
     <div className="min-h-screen bg-[#0f172a] text-white p-6 md:p-10" dir="rtl">
       <div className="max-w-4xl mx-auto space-y-6">
         
+        {/* رأس الكورس وشريط التقدم */}
         <div className="bg-[#1e293b] p-6 rounded-2xl border border-gray-800 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <Link href="/dashboard" className="text-blue-400 hover:underline mb-2 inline-block text-sm">
@@ -195,6 +221,7 @@ function CourseContent() {
           </div>
         </div>
 
+        {/* قائمة الدروس */}
         <div className="bg-[#1e293b] p-6 rounded-2xl border border-gray-800 shadow-lg">
           <h3 className="text-lg font-semibold mb-3 text-gray-200">قائمة دروس الكورس</h3>
           <div className="flex flex-wrap gap-2">
@@ -257,7 +284,33 @@ function CourseContent() {
               <p>{activeLesson.content || 'لا يوجد وصف نصي إضافي لهذا الدرس.'}</p>
             </div>
 
-            {/* قسم الكويز والاختبار التفاعلي */}
+            {/* قسم الملاحظات الشخصية الجديد */}
+            <div className="bg-[#0f172a] p-5 rounded-xl border border-gray-800 space-y-3">
+              <div className="flex justify-between items-center">
+                <h4 className="font-bold text-amber-400 text-sm flex items-center gap-2">
+                  <span>📝 ملاحظاتي الشخصية لهذا الدرس</span>
+                </h4>
+                {noteMessage && <span className="text-xs text-green-400 font-medium">{noteMessage}</span>}
+              </div>
+              <textarea
+                value={noteContent}
+                onChange={(e) => setNoteContent(e.target.value)}
+                placeholder="اكتب أفكارك، أكواد برمجية، أو نقاط مهمة استنتجتها من هذا الدرس لتراجعها لاحقاً..."
+                rows="4"
+                className="w-full bg-[#1e293b] text-white p-3 rounded-xl border border-gray-700 focus:outline-none focus:border-amber-500 text-sm leading-relaxed"
+              ></textarea>
+              <div className="flex justify-end">
+                <button
+                  onClick={handleSaveNote}
+                  disabled={savingNote}
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition shadow"
+                >
+                  {savingNote ? 'جاري الحفظ...' : 'حفظ الملاحظة'}
+                </button>
+              </div>
+            </div>
+
+            {/* قسم الكويز والاختبار */}
             {quiz && (
               <div className="bg-[#0f172a] p-6 rounded-xl border border-blue-900/50 space-y-4">
                 <h4 className="text-base font-bold text-green-400">📝 اختبار قصير للدرس:</h4>
