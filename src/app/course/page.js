@@ -24,10 +24,10 @@ function CourseContent() {
   const [selectedOption, setSelectedOption] = useState(null);
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
 
-  // حالات قسم الملاحظات الشخصية
-  const [noteContent, setNoteContent] = useState('');
-  const [savingNote, setSavingNote] = useState(false);
-  const [noteMessage, setNoteMessage] = useState('');
+  // حالات الملاحظات المتعددة
+  const [notes, setNotes] = useState([]);
+  const [newNoteText, setNewNoteText] = useState('');
+  const [addingNote, setAddingNote] = useState(false);
 
   useEffect(() => {
     async function fetchCourseData() {
@@ -36,22 +36,18 @@ function CourseContent() {
       try {
         setLoading(true);
         
-        // جلب المستخدم الحالي
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) {
-          console.error('خطأ في جلسة المستخدم:', sessionError.message);
-        }
+        if (sessionError) console.error(sessionError.message);
 
         if (session) {
           setUserId(session.user.id);
           
-          // جلب الدروس المكتملة
-          const { data: progressData, error: progError } = await supabase
+          const { data: progressData } = await supabase
             .from('user_progress')
             .select('lesson_id')
             .eq('user_id', session.user.id);
             
-          if (!progError && progressData) {
+          if (progressData) {
             setCompletedLessons(progressData.map(p => p.lesson_id));
           }
         }
@@ -76,7 +72,7 @@ function CourseContent() {
           setActiveLesson(lessonsData[0]);
         }
       } catch (err) {
-        console.error('خطأ عام في جلب بيانات الكورس:', err.message);
+        console.error('خطأ عام:', err.message);
       } finally {
         setLoading(false);
       }
@@ -85,17 +81,16 @@ function CourseContent() {
     fetchCourseData();
   }, [courseId]);
 
-  // جلب الكويز والملاحظة الخاصة بالدرس النشط كلما تغير الدرس
+  // جلب الكويز وملاحظات الدرس الحالي عند تغييره
   useEffect(() => {
-    async function fetchLessonDetails() {
+    async function fetchLessonData() {
       if (!activeLesson) return;
       
-      // تصفير الحالات عند الانتقال لدرس جديد
       setQuiz(null);
       setSelectedOption(null);
       setIsAnswerSubmitted(false);
-      setNoteContent('');
-      setNoteMessage('');
+      setNewNoteText('');
+      setNotes([]);
 
       // 1. جلب الكويز
       const { data: quizData } = await supabase
@@ -104,58 +99,71 @@ function CourseContent() {
         .eq('lesson_id', activeLesson.id)
         .maybeSingle();
 
-      if (quizData) {
-        setQuiz(quizData);
-      }
+      if (quizData) setQuiz(quizData);
 
-      // 2. جلب ملاحظة الطالب لهذا الدرس إن وجدت
+      // 2. جلب ملاحظات هذا الدرس الخاصة بالمستخدم
       if (userId) {
-        const { data: noteData } = await supabase
+        const { data: notesData } = await supabase
           .from('notes')
-          .select('content')
+          .select('*')
           .eq('user_id', userId)
           .eq('lesson_id', activeLesson.id)
-          .maybeSingle();
+          .order('created_at', { ascending: false });
 
-        if (noteData) {
-          setNoteContent(noteData.content);
-        }
+        if (notesData) setNotes(notesData);
       }
     }
 
-    fetchLessonDetails();
+    fetchLessonData();
   }, [activeLesson, userId]);
 
-  // حفظ أو تحديث الملاحظة في قاعدة البيانات
-  const handleSaveNote = async () => {
+  // إضافة ملاحظة جديدة للقائمة
+  const handleAddNote = async (e) => {
+    e.preventDefault();
+    if (!newNoteText.trim()) return;
+
     if (!userId) {
-      alert('يجب تسجيل الدخول لحفظ ملاحظاتك!');
+      alert('يجب تسجيل الدخول لإضافة ملاحظات!');
       router.push('/login');
       return;
     }
 
-    setSavingNote(true);
-    setNoteMessage('');
+    setAddingNote(true);
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('notes')
-      .upsert([
+      .insert([
         { 
           user_id: userId, 
           lesson_id: activeLesson.id, 
-          content: noteContent,
-          updated_at: new Date()
+          content: newNoteText.trim() 
         }
-      ], { onConflict: 'user_id, lesson_id' });
+      ])
+      .select();
 
-    setSavingNote(false);
+    setAddingNote(false);
 
     if (error) {
-      console.error('خطأ في حفظ الملاحظة:', error.message);
-      setNoteMessage('حدث خطأ أثناء حفظ الملاحظة ❌');
+      console.error('خطأ أثناء إضافة الملاحظة:', error.message);
+      alert('حدث خطأ أثناء إضافة الملاحظة');
+    } else if (data && data.length > 0) {
+      // إضافة الملاحظة الجديدة مباشرة للقائمة بدون إعادة تحميل
+      setNotes(prev => [data[0], ...prev]);
+      setNewNoteText('');
+    }
+  };
+
+  // حذف ملاحظة محددة
+  const handleDeleteNote = async (noteId) => {
+    const { error } = await supabase
+      .from('notes')
+      .delete()
+      .eq('id', noteId);
+
+    if (!error) {
+      setNotes(prev => prev.filter(note => note.id !== noteId));
     } else {
-      setNoteMessage('تم حفظ الملاحظة بنجاح! ✓');
-      setTimeout(() => setNoteMessage(''), 3000);
+      alert('فشل حذف الملاحظة');
     }
   };
 
@@ -284,29 +292,50 @@ function CourseContent() {
               <p>{activeLesson.content || 'لا يوجد وصف نصي إضافي لهذا الدرس.'}</p>
             </div>
 
-            {/* قسم الملاحظات الشخصية الجديد */}
-            <div className="bg-[#0f172a] p-5 rounded-xl border border-gray-800 space-y-3">
-              <div className="flex justify-between items-center">
-                <h4 className="font-bold text-amber-400 text-sm flex items-center gap-2">
-                  <span>📝 ملاحظاتي الشخصية لهذا الدرس</span>
-                </h4>
-                {noteMessage && <span className="text-xs text-green-400 font-medium">{noteMessage}</span>}
-              </div>
-              <textarea
-                value={noteContent}
-                onChange={(e) => setNoteContent(e.target.value)}
-                placeholder="اكتب أفكارك، أكواد برمجية، أو نقاط مهمة استنتجتها من هذا الدرس لتراجعها لاحقاً..."
-                rows="4"
-                className="w-full bg-[#1e293b] text-white p-3 rounded-xl border border-gray-700 focus:outline-none focus:border-amber-500 text-sm leading-relaxed"
-              ></textarea>
-              <div className="flex justify-end">
-                <button
-                  onClick={handleSaveNote}
-                  disabled={savingNote}
-                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition shadow"
-                >
-                  {savingNote ? 'جاري الحفظ...' : 'حفظ الملاحظة'}
-                </button>
+            {/* قسم الملاحظات المتعددة التفاعلي */}
+            <div className="bg-[#0f172a] p-5 rounded-xl border border-gray-800 space-y-4">
+              <h4 className="font-bold text-amber-400 text-sm flex items-center gap-2">
+                <span>📝 ملاحظاتي الشخصية (يمكنك إضافة عدة ملاحظات)</span>
+              </h4>
+
+              {/* حقل إضافة ملاحظة جديدة */}
+              <form onSubmit={handleAddNote} className="space-y-2">
+                <textarea
+                  value={newNoteText}
+                  onChange={(e) => setNewNoteText(e.target.value)}
+                  placeholder="اكتب ملاحظة جديدة أو فكرة استنتجتها من الدرس..."
+                  rows="2"
+                  className="w-full bg-[#1e293b] text-white p-3 rounded-xl border border-gray-700 focus:outline-none focus:border-amber-500 text-sm leading-relaxed"
+                ></textarea>
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={addingNote || !newNoteText.trim()}
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition shadow"
+                  >
+                    {addingNote ? 'جاري الإضافة...' : '+ إضافة ملاحظة'}
+                  </button>
+                </div>
+              </form>
+
+              {/* قائمة عرض الملاحظات المضافة */}
+              <div className="space-y-2 pt-2 border-t border-gray-800">
+                {notes.length > 0 ? (
+                  notes.map((note) => (
+                    <div key={note.id} className="bg-[#1e293b] p-3 rounded-xl border border-gray-800 flex justify-between items-start gap-3">
+                      <p className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed flex-1">{note.content}</p>
+                      <button
+                        onClick={() => handleDeleteNote(note.id)}
+                        className="text-red-400 hover:text-red-300 text-xs px-2 py-1 transition"
+                        title="حذف الملاحظة"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-xs text-center py-2">لا توجد ملاحظات مضافة لهذا الدرس حتى الآن.</p>
+                )}
               </div>
             </div>
 
