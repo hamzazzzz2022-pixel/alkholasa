@@ -29,7 +29,7 @@ function CourseContent() {
   const [newNoteText, setNewNoteText] = useState('');
   const [addingNote, setAddingNote] = useState(false);
 
-  // تحميل مكتبة الكونفيتي تلقائياً في الصفحة عبر CDN موثوق
+  // تحميل مكتبة الكونفيتي تلقائياً عبر CDN
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
@@ -37,17 +37,28 @@ function CourseContent() {
     document.body.appendChild(script);
   }, []);
 
-  // دالة تشغيل الاحتفال الناري 🎉
-  const triggerConfetti = () => {
+  // 🔊 دالة تشغيل مؤثر الصوت التحفيزي للإنجاز
+  const playSuccessSound = () => {
+    try {
+      // صوت إنجاز ناعم ومبهج جاهز عبر الإنترنت
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
+      audio.volume = 0.5; // مستوى صوت مريح غير مزعج
+      audio.play().catch(e => console.log("Audio play blocked by browser policy:", e));
+    } catch (err) {
+      console.log("Error playing sound:", err);
+    }
+  };
+
+  // دالة تشغيل الاحتفال الناري 🎉 + الصوت 🔊
+  const triggerCelebration = () => {
     if (window.confetti) {
       window.confetti({
         particleCount: 120,
         spread: 80,
         origin: { y: 0.6 }
       });
-    } else {
-      console.log("Confetti script is still loading...");
     }
+    playSuccessSound();
   };
 
   useEffect(() => {
@@ -195,15 +206,16 @@ function CourseContent() {
         { user_id: userId, lesson_id: lessonId, is_completed: true }
       ], { onConflict: 'user_id, lesson_id' });
       
-      // إطلاق الاحتفال المبهج! 🎉
-      triggerConfetti();
+      // تشغيل الاحتفال البصري والصوتي معاً! 🎊🔊
+      triggerCelebration();
     }
   };
 
   const handleSubmitQuizAnswer = () => {
     setIsAnswerSubmitted(true);
     if (selectedOption === quiz.correct_option_index) {
-      triggerConfetti();
+      // احتفال وصوت عند الإجابة الصحيحة أيضاً! 🌟
+      triggerCelebration();
     }
   };
 
@@ -395,7 +407,7 @@ function CourseContent() {
                 ) : (
                   <div className="text-center p-3 rounded-xl text-sm font-bold">
                     {selectedOption === quiz.correct_option_index ? (
-                      <p className="text-green-600 dark:text-green-400">إجابة صحيحة أحسنت! 🎉 (تم إطلاق الاحتفال)</p>
+                      <p className="text-green-600 dark:text-green-400">إجابة صحيحة أحسنت! 🎉 (تم إطلاق الاحتفال والصوت)</p>
                     ) : (
                       <p className="text-red-500 dark:text-red-400">إجابة خاطئة، الإجابة الصحيحة هي الخيار رقم ({quiz.correct_option_index + 1}) ❌</p>
                     )}
