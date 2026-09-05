@@ -6,6 +6,7 @@ import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/supabase';
 import Link from 'next/link';
+import confetti from 'canvas-confetti'; // استيراد مكتبة الكونفيتي الاحترافية
 
 function CourseContent() {
   const searchParams = useSearchParams();
@@ -117,6 +118,15 @@ function CourseContent() {
     fetchLessonData();
   }, [activeLesson, userId]);
 
+  // دالة تشغيل احتفال الكونفيتي 🎉
+  const triggerConfetti = () => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+  };
+
   // إضافة ملاحظة جديدة للقائمة
   const handleAddNote = async (e) => {
     e.preventDefault();
@@ -145,9 +155,7 @@ function CourseContent() {
 
     if (error) {
       console.error('خطأ أثناء إضافة الملاحظة:', error.message);
-      alert('حدث خطأ أثناء إضافة الملاحظة');
     } else if (data && data.length > 0) {
-      // إضافة الملاحظة الجديدة مباشرة للقائمة بدون إعادة تحميل
       setNotes(prev => [data[0], ...prev]);
       setNewNoteText('');
     }
@@ -162,12 +170,10 @@ function CourseContent() {
 
     if (!error) {
       setNotes(prev => prev.filter(note => note.id !== noteId));
-    } else {
-      alert('فشل حذف الملاحظة');
     }
   };
 
-  // تحديث حالة إتمام الدرس
+  // تحديث حالة إتمام الدرس (مع إطلاق الكونفيتي لو أصبح مكتملاً)
   const toggleComplete = async (lessonId) => {
     if (!userId) {
       alert('يجب تسجيل الدخول لحفظ تقدمك!');
@@ -185,6 +191,18 @@ function CourseContent() {
       await supabase.from('user_progress').upsert([
         { user_id: userId, lesson_id: lessonId, is_completed: true }
       ], { onConflict: 'user_id, lesson_id' });
+      
+      // إطلاق الاحتفال عند إتمام الدرس! 🎊
+      triggerConfetti();
+    }
+  };
+
+  // معالجة تأكيد إجابة الكويز
+  const handleSubmitQuizAnswer = () => {
+    setIsAnswerSubmitted(true);
+    // لو الإجابة صحيحة، نطلق احتفال الكونفيتي أيضاً! 🌟
+    if (selectedOption === quiz.correct_option_index) {
+      triggerConfetti();
     }
   };
 
@@ -211,27 +229,27 @@ function CourseContent() {
   const progressPercentage = lessons.length > 0 ? Math.round((completedLessons.length / lessons.length) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white p-6 md:p-10" dir="rtl">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-white p-6 md:p-10 transition-colors duration-200" dir="rtl">
       <div className="max-w-4xl mx-auto space-y-6">
         
         {/* رأس الكورس وشريط التقدم */}
-        <div className="bg-[#1e293b] p-6 rounded-2xl border border-gray-800 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="bg-white dark:bg-[#1e293b] p-6 rounded-2xl border border-slate-200 dark:border-gray-800 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <Link href="/dashboard" className="text-blue-400 hover:underline mb-2 inline-block text-sm">
+            <Link href="/dashboard" className="text-blue-600 dark:text-blue-400 hover:underline mb-2 inline-block text-sm">
               ← العودة للرئيسية
             </Link>
-            <h1 className="text-2xl md:text-3xl font-bold text-white">{course.title}</h1>
-            <p className="text-gray-300 mt-1 text-sm">{course.description}</p>
+            <h1 className="text-2xl md:text-3xl font-bold">{course.title}</h1>
+            <p className="text-slate-500 dark:text-gray-300 mt-1 text-sm">{course.description}</p>
           </div>
-          <div className="w-full md:w-48 bg-gray-700 rounded-full h-3 overflow-hidden">
+          <div className="w-full md:w-48 bg-slate-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
             <div className="bg-green-500 h-full transition-all duration-300" style={{ width: `${progressPercentage}%` }}></div>
-            <span className="text-xs text-gray-300 block text-center mt-1">النسبة: {progressPercentage}% ({completedLessons.length}/{lessons.length})</span>
+            <span className="text-xs text-slate-500 dark:text-gray-300 block text-center mt-1">النسبة: {progressPercentage}% ({completedLessons.length}/{lessons.length})</span>
           </div>
         </div>
 
         {/* قائمة الدروس */}
-        <div className="bg-[#1e293b] p-6 rounded-2xl border border-gray-800 shadow-lg">
-          <h3 className="text-lg font-semibold mb-3 text-gray-200">قائمة دروس الكورس</h3>
+        <div className="bg-white dark:bg-[#1e293b] p-6 rounded-2xl border border-slate-200 dark:border-gray-800 shadow-lg">
+          <h3 className="text-lg font-semibold mb-3 text-slate-800 dark:text-gray-200">قائمة دروس الكورس</h3>
           <div className="flex flex-wrap gap-2">
             {lessons.length > 0 ? (
               lessons.map((lesson) => {
@@ -245,34 +263,34 @@ function CourseContent() {
                     className={`px-4 py-2 rounded-xl text-sm font-medium transition border flex items-center gap-2 ${
                       isActive 
                         ? 'bg-blue-600 border-blue-500 text-white shadow-md' 
-                        : 'bg-[#0f172a] hover:bg-[#273548] border-gray-700 text-gray-300'
+                        : 'bg-slate-100 dark:bg-[#0f172a] hover:bg-slate-200 dark:hover:bg-[#273548] border-slate-200 dark:border-gray-700 text-slate-700 dark:text-gray-300'
                     }`}
                   >
                     <span>{lesson.title}</span>
-                    {isCompleted && <span className="text-green-400 text-xs">✓</span>}
+                    {isCompleted && <span className="text-green-500 dark:text-green-400 text-xs font-bold">✓</span>}
                   </button>
                 );
               })
             ) : (
-              <p className="text-gray-400 text-sm">لا توجد دروس مضافة.</p>
+              <p className="text-slate-500 dark:text-gray-400 text-sm">لا توجد دروس مضافة.</p>
             )}
           </div>
         </div>
 
         {activeLesson ? (
-          <div className="bg-[#1e293b] p-6 md:p-8 rounded-2xl shadow-xl border border-gray-800 space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-700 pb-4">
-              <h2 className="text-2xl font-bold text-blue-400">{activeLesson.title}</h2>
+          <div className="bg-white dark:bg-[#1e293b] p-6 md:p-8 rounded-2xl shadow-xl border border-slate-200 dark:border-gray-800 space-y-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 dark:border-gray-700 pb-4">
+              <h2 className="text-2xl font-bold text-blue-600 dark:text-blue-400">{activeLesson.title}</h2>
               
               <button 
                 onClick={() => toggleComplete(activeLesson.id)}
                 className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition flex items-center gap-2 ${
                   isCurrentCompleted 
-                    ? 'bg-green-600 hover:bg-green-700 text-white' 
-                    : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+                    ? 'bg-green-600 hover:bg-green-700 text-white shadow-md shadow-green-600/20' 
+                    : 'bg-slate-200 dark:bg-gray-700 hover:bg-slate-300 dark:hover:bg-gray-600 text-slate-700 dark:text-gray-200'
                 }`}
               >
-                {isCurrentCompleted ? '✓ اكتملت المشاهدة' : 'اضغط اكتملت المشاهدة'}
+                {isCurrentCompleted ? '✓ اكتملت المشاهدة (تم إنجازها)' : 'اضغط اكتملت المشاهدة 🎯'}
               </button>
             </div>
             
@@ -280,32 +298,31 @@ function CourseContent() {
               <div className="aspect-video w-full">
                 <iframe 
                   src={activeLesson.video_url} 
-                  className="w-full h-full rounded-xl border border-gray-700"
+                  className="w-full h-full rounded-xl border border-slate-200 dark:border-gray-700"
                   allowFullScreen
                   title={activeLesson.title}
                 ></iframe>
               </div>
             )}
             
-            <div className="text-gray-300 leading-relaxed bg-[#0f172a] p-4 rounded-xl border border-gray-800">
-              <h4 className="font-semibold text-white mb-2">محتوى الدرس:</h4>
+            <div className="text-slate-600 dark:text-gray-300 leading-relaxed bg-slate-50 dark:bg-[#0f172a] p-4 rounded-xl border border-slate-200 dark:border-gray-800">
+              <h4 className="font-semibold text-slate-800 dark:text-white mb-2">محتوى الدرس:</h4>
               <p>{activeLesson.content || 'لا يوجد وصف نصي إضافي لهذا الدرس.'}</p>
             </div>
 
-            {/* قسم الملاحظات المتعددة التفاعلي */}
-            <div className="bg-[#0f172a] p-5 rounded-xl border border-gray-800 space-y-4">
-              <h4 className="font-bold text-amber-400 text-sm flex items-center gap-2">
+            {/* قسم الملاحظات المتعددة */}
+            <div className="bg-slate-50 dark:bg-[#0f172a] p-5 rounded-xl border border-slate-200 dark:border-gray-800 space-y-4">
+              <h4 className="font-bold text-amber-500 dark:text-amber-400 text-sm flex items-center gap-2">
                 <span>📝 ملاحظاتي الشخصية (يمكنك إضافة عدة ملاحظات)</span>
               </h4>
 
-              {/* حقل إضافة ملاحظة جديدة */}
               <form onSubmit={handleAddNote} className="space-y-2">
                 <textarea
                   value={newNoteText}
                   onChange={(e) => setNewNoteText(e.target.value)}
                   placeholder="اكتب ملاحظة جديدة أو فكرة استنتجتها من الدرس..."
                   rows="2"
-                  className="w-full bg-[#1e293b] text-white p-3 rounded-xl border border-gray-700 focus:outline-none focus:border-amber-500 text-sm leading-relaxed"
+                  className="w-full bg-white dark:bg-[#1e293b] text-slate-900 dark:text-white p-3 rounded-xl border border-slate-200 dark:border-gray-700 focus:outline-none focus:border-amber-500 text-sm leading-relaxed"
                 ></textarea>
                 <div className="flex justify-end">
                   <button
@@ -318,15 +335,14 @@ function CourseContent() {
                 </div>
               </form>
 
-              {/* قائمة عرض الملاحظات المضافة */}
-              <div className="space-y-2 pt-2 border-t border-gray-800">
+              <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-gray-800">
                 {notes.length > 0 ? (
                   notes.map((note) => (
-                    <div key={note.id} className="bg-[#1e293b] p-3 rounded-xl border border-gray-800 flex justify-between items-start gap-3">
-                      <p className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed flex-1">{note.content}</p>
+                    <div key={note.id} className="bg-white dark:bg-[#1e293b] p-3 rounded-xl border border-slate-200 dark:border-gray-800 flex justify-between items-start gap-3">
+                      <p className="text-sm text-slate-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed flex-1">{note.content}</p>
                       <button
                         onClick={() => handleDeleteNote(note.id)}
-                        className="text-red-400 hover:text-red-300 text-xs px-2 py-1 transition"
+                        className="text-red-500 hover:text-red-400 text-xs px-2 py-1 transition"
                         title="حذف الملاحظة"
                       >
                         ✕
@@ -334,28 +350,28 @@ function CourseContent() {
                     </div>
                   ))
                 ) : (
-                  <p className="text-gray-500 text-xs text-center py-2">لا توجد ملاحظات مضافة لهذا الدرس حتى الآن.</p>
+                  <p className="text-slate-400 dark:text-gray-500 text-xs text-center py-2">لا توجد ملاحظات مضافة لهذا الدرس حتى الآن.</p>
                 )}
               </div>
             </div>
 
             {/* قسم الكويز والاختبار */}
             {quiz && (
-              <div className="bg-[#0f172a] p-6 rounded-xl border border-blue-900/50 space-y-4">
-                <h4 className="text-base font-bold text-green-400">📝 اختبار قصير للدرس:</h4>
-                <p className="text-sm font-medium text-white">{quiz.question}</p>
+              <div className="bg-slate-50 dark:bg-[#0f172a] p-6 rounded-xl border border-blue-200 dark:border-blue-900/50 space-y-4">
+                <h4 className="text-base font-bold text-green-600 dark:text-green-400">📝 اختبار قصير للدرس:</h4>
+                <p className="text-sm font-medium text-slate-800 dark:text-white">{quiz.question}</p>
 
                 <div className="space-y-2">
                   {quiz.options && quiz.options.map((option, idx) => {
-                    let btnStyle = "bg-[#1e293b] hover:bg-slate-800 text-gray-200 border-gray-700";
+                    let btnStyle = "bg-white dark:bg-[#1e293b] hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-gray-200 border-slate-200 dark:border-gray-700";
                     if (isAnswerSubmitted) {
                       if (idx === quiz.correct_option_index) {
-                        btnStyle = "bg-green-600/30 border-green-500 text-green-300";
+                        btnStyle = "bg-green-100 dark:bg-green-600/35 border-green-500 text-green-700 dark:text-green-300 font-bold";
                       } else if (idx === selectedOption) {
-                        btnStyle = "bg-red-600/30 border-red-500 text-red-300";
+                        btnStyle = "bg-red-100 dark:bg-red-600/35 border-red-500 text-red-700 dark:text-red-300";
                       }
                     } else if (selectedOption === idx) {
-                      btnStyle = "bg-blue-600/30 border-blue-500 text-blue-300";
+                      btnStyle = "bg-blue-100 dark:bg-blue-600/35 border-blue-500 text-blue-700 dark:text-blue-300 font-bold";
                     }
 
                     return (
@@ -374,17 +390,17 @@ function CourseContent() {
                 {!isAnswerSubmitted ? (
                   <button
                     disabled={selectedOption === null}
-                    onClick={() => setIsAnswerSubmitted(true)}
-                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-sm transition"
+                    onClick={handleSubmitQuizAnswer}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-sm transition shadow"
                   >
                     تأكيد الإجابة
                   </button>
                 ) : (
                   <div className="text-center p-3 rounded-xl text-sm font-bold">
                     {selectedOption === quiz.correct_option_index ? (
-                      <p className="text-green-400">إجابة صحيحة أحسنت! 🎉</p>
+                      <p className="text-green-600 dark:text-green-400">إجابة صحيحة أحسنت! 🎉 (تم إطلاق الاحتفال)</p>
                     ) : (
-                      <p className="text-red-400">إجابة خاطئة، الإجابة الصحيحة هي الخيار رقم ({quiz.correct_option_index + 1}) ❌</p>
+                      <p className="text-red-500 dark:text-red-400">إجابة خاطئة، الإجابة الصحيحة هي الخيار رقم ({quiz.correct_option_index + 1}) ❌</p>
                     )}
                   </div>
                 )}
@@ -392,7 +408,7 @@ function CourseContent() {
             )}
           </div>
         ) : (
-          <div className="bg-[#1e293b] p-10 rounded-2xl text-center text-gray-400 border border-gray-800">
+          <div className="bg-white dark:bg-[#1e293b] p-10 rounded-2xl text-center text-slate-400 dark:text-gray-400 border border-slate-200 dark:border-gray-800">
             اختر درساً من القائمة بالأعلى لعرض المحتوى.
           </div>
         )}
@@ -405,7 +421,7 @@ function CourseContent() {
 export default function CoursePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#0f172a] text-white flex items-center justify-center">
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
         <div className="text-xl animate-pulse">جاري التحميل...</div>
       </div>
     }>
