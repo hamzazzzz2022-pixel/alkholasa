@@ -82,7 +82,7 @@ function CourseContent() {
     fetchCourseData();
   }, [courseId]);
 
-  // جلب الكويز المرتبط بالدرس الحالي كلما تغير الدرس النشط
+  // جلب الكويز المرتبط بالدرس النشط حالياً
   useEffect(() => {
     async function fetchQuizForLesson() {
       if (!activeLesson) return;
@@ -90,6 +90,7 @@ function CourseContent() {
       setSelectedOption(null);
       setIsAnswerSubmitted(false);
 
+      // جلب السؤال المطابق لـ lesson_id للدرس الحالي، أو جلب أول سؤال متوفر كبديل لو أردت ضمان ظهوره
       const { data, error } = await supabase
         .from('quizzes')
         .select('*')
@@ -98,6 +99,18 @@ function CourseContent() {
 
       if (!error && data) {
         setQuiz(data);
+      } else {
+        // حل احتياطي: لو لم يوجد تطابق بالرقم، جلب أحدث سؤال متاح لكي يظهر للتجربة
+        const { data: fallbackData } = await supabase
+          .from('quizzes')
+          .select('*')
+          .order('id', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (fallbackData) {
+          setQuiz(fallbackData);
+        }
       }
     }
 
@@ -244,7 +257,7 @@ function CourseContent() {
               <p>{activeLesson.content || 'لا يوجد وصف نصي إضافي لهذا الدرس.'}</p>
             </div>
 
-            {/* قسم الكويز والاختبار التفاعلي للدرس */}
+            {/* قسم الكويز والاختبار التفاعلي */}
             {quiz && (
               <div className="bg-[#0f172a] p-6 rounded-xl border border-blue-900/50 space-y-4">
                 <h4 className="text-base font-bold text-green-400">📝 اختبار قصير للدرس:</h4>
