@@ -20,6 +20,7 @@ export default function AdminPage() {
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [lessonTitle, setLessonTitle] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
+  const [uploadingVideo, setUploadingVideo] = useState(false); // حالة تحميل الفيديو
 
   // نموذج إضافة سؤال / كويز
   const [selectedLessonId, setSelectedLessonId] = useState('');
@@ -57,6 +58,39 @@ export default function AdminPage() {
     checkAdminAndFetch();
   }, [router]);
 
+  // دالة رفع الفيديو من الجهاز إلى Supabase Storage
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setUploadingVideo(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      // رفع الملف إلى الـ Bucket اللي سميناه lesson-videos
+      const { error: uploadError } = await supabase.storage
+        .from('lesson-videos')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // جلب الرابط العام (Public URL) للفيديو
+      const { data } = supabase.storage
+        .from('lesson-videos')
+        .getPublicUrl(filePath);
+
+      setVideoUrl(data.publicUrl);
+      alert('تم رفع الفيديو من الجهاز بنجاح! 🚀');
+    } catch (err) {
+      console.error('خطأ في الرفع:', err.message);
+      alert('حدث خطأ أثناء رفع الفيديو: ' + err.message);
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
+
   // إضافة كورس جديد
   const handleAddCourse = async (e) => {
     e.preventDefault();
@@ -80,7 +114,7 @@ export default function AdminPage() {
   // إضافة درس جديد
   const handleAddLesson = async (e) => {
     e.preventDefault();
-    if (!selectedCourseId || !lessonTitle || !videoUrl) return alert('الرجاء ملء جميع الحقول المطلوبة');
+    if (!selectedCourseId || !lessonTitle || !videoUrl) return alert('الرجاء ملء جميع الحقول المطلوبة (عنوان الدرس ورابط أو ملف الفيديو)');
 
     const { data, error } = await supabase.from('lessons').insert([
       { course_id: selectedCourseId, title: lessonTitle, video_url: videoUrl }
@@ -105,7 +139,6 @@ export default function AdminPage() {
 
     const optionsArray = [option0, option1, option2, option3];
 
-    // حذف أي كويز قديم للدرس أولاً لمنع التكرار (أو يمكنك التحديث)
     await supabase.from('quizzes').delete().eq('lesson_id', selectedLessonId);
 
     const { error } = await supabase.from('quizzes').insert([
@@ -132,7 +165,7 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center dir-rtl">
-        <p className="text-sm font-medium">جاري التحميل للوحة الإدارة...</p>
+        <p className="text-sm font-medium">جاري التحميل لوحة الإدارة...</p>
       </div>
     );
   }
@@ -193,7 +226,7 @@ export default function AdminPage() {
             </form>
           </div>
 
-          {/* 2. إضافة درس */}
+          {/* 2. إضافة درس (مع دعم رفع فيديو من الجهاز أو يوتيوب) */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-md space-y-4">
             <h2 className="text-base font-bold text-blue-600 dark:text-blue-400 border-b border-slate-100 dark:border-slate-800 pb-2">2. إضافة درس لكورس 🎬</h2>
             <form onSubmit={handleAddLesson} className="space-y-3">
@@ -219,16 +252,32 @@ export default function AdminPage() {
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-xs focus:outline-none focus:border-blue-500"
                 />
               </div>
+
+              {/* حقل إدخال رابط يوتيوب أو ظهور رابط الفيديو المرفوع */}
               <div>
-                <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">رابط الفيديو Embed</label>
+                <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">رابط الفيديو (أو ارفعه من جهازك بالأسفل)</label>
                 <input
                   type="text"
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}
-                  placeholder="مثال: https://www.youtube.com/embed/..."
+                  placeholder="https://... أو رابط الفيديو المرفوع تلقائياً"
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-xs focus:outline-none focus:border-blue-500"
                 />
               </div>
+
+              {/* زر رفع الفيديو من الجهاز */}
+              <div>
+                <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">أو ارفع فيديو من جهازك:</label>
+                <input 
+                  type="file" 
+                  accept="video/*" 
+                  onChange={handleFileUpload}
+                  disabled={uploadingVideo}
+                  className="w-full text-xs text-slate-500 dark:text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 cursor-pointer"
+                />
+                {uploadingVideo && <p className="text-amber-500 text-xs mt-1 animate-pulse">جاري رفع الفيديو لمنصة التخزين، يرجى الانتظار...</p>}
+              </div>
+
               <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 rounded-xl transition">
                 حفظ الدرس 🎥
               </button>
