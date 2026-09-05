@@ -20,7 +20,7 @@ export default function AdminPage() {
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [lessonTitle, setLessonTitle] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
-  const [uploadingVideo, setUploadingVideo] = useState(false); // حالة تحميل الفيديو
+  const [uploadingVideo, setUploadingVideo] = useState(false);
 
   // نموذج إضافة سؤال / كويز
   const [selectedLessonId, setSelectedLessonId] = useState('');
@@ -130,7 +130,7 @@ export default function AdminPage() {
     }
   };
 
-  // إضافة اختبار/سؤال جديد للدرس
+  // إضافة اختبار/سؤال جديد للدرس (مُعدّلة ومحمية)
   const handleAddQuiz = async (e) => {
     e.preventDefault();
     if (!selectedLessonId || !quizQuestion || !option0 || !option1 || !option2 || !option3) {
@@ -139,9 +139,18 @@ export default function AdminPage() {
 
     const optionsArray = [option0, option1, option2, option3];
 
-    await supabase.from('quizzes').delete().eq('lesson_id', selectedLessonId);
+    // حذف السؤال القديم إن وجد للدرس الحالي
+    const { error: deleteError } = await supabase
+      .from('quizzes')
+      .delete()
+      .eq('lesson_id', selectedLessonId);
 
-    const { error } = await supabase.from('quizzes').insert([
+    if (deleteError) {
+      console.error('خطأ عند حذف السؤال القديم:', deleteError.message);
+    }
+
+    // إدراج السؤال الجديد
+    const { error: insertError } = await supabase.from('quizzes').insert([
       {
         lesson_id: selectedLessonId,
         question: quizQuestion,
@@ -150,7 +159,7 @@ export default function AdminPage() {
       }
     ]);
 
-    if (!error) {
+    if (!insertError) {
       setQuizQuestion('');
       setOption0('');
       setOption1('');
@@ -158,7 +167,8 @@ export default function AdminPage() {
       setOption3('');
       alert('تم حفظ السؤال وتحديث اختبار الدرس بنجاح! 📝');
     } else {
-      alert('حدث خطأ أثناء حفظ السؤال: ' + error.message);
+      console.error('خطأ Supabase:', insertError);
+      alert('حدث خطأ أثناء حفظ السؤال: ' + insertError.message);
     }
   };
 
