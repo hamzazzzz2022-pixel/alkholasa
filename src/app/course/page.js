@@ -6,7 +6,6 @@ import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/supabase';
 import Link from 'next/link';
-import confetti from 'canvas-confetti'; // استيراد مكتبة الكونفيتي الاحترافية
 
 function CourseContent() {
   const searchParams = useSearchParams();
@@ -29,6 +28,27 @@ function CourseContent() {
   const [notes, setNotes] = useState([]);
   const [newNoteText, setNewNoteText] = useState('');
   const [addingNote, setAddingNote] = useState(false);
+
+  // تحميل مكتبة الكونفيتي تلقائياً في الصفحة عبر CDN موثوق
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
+
+  // دالة تشغيل الاحتفال الناري 🎉
+  const triggerConfetti = () => {
+    if (window.confetti) {
+      window.confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.6 }
+      });
+    } else {
+      console.log("Confetti script is still loading...");
+    }
+  };
 
   useEffect(() => {
     async function fetchCourseData() {
@@ -82,7 +102,6 @@ function CourseContent() {
     fetchCourseData();
   }, [courseId]);
 
-  // جلب الكويز وملاحظات الدرس الحالي عند تغييره
   useEffect(() => {
     async function fetchLessonData() {
       if (!activeLesson) return;
@@ -93,7 +112,6 @@ function CourseContent() {
       setNewNoteText('');
       setNotes([]);
 
-      // 1. جلب الكويز
       const { data: quizData } = await supabase
         .from('quizzes')
         .select('*')
@@ -102,7 +120,6 @@ function CourseContent() {
 
       if (quizData) setQuiz(quizData);
 
-      // 2. جلب ملاحظات هذا الدرس الخاصة بالمستخدم
       if (userId) {
         const { data: notesData } = await supabase
           .from('notes')
@@ -118,16 +135,6 @@ function CourseContent() {
     fetchLessonData();
   }, [activeLesson, userId]);
 
-  // دالة تشغيل احتفال الكونفيتي 🎉
-  const triggerConfetti = () => {
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 }
-    });
-  };
-
-  // إضافة ملاحظة جديدة للقائمة
   const handleAddNote = async (e) => {
     e.preventDefault();
     if (!newNoteText.trim()) return;
@@ -153,15 +160,12 @@ function CourseContent() {
 
     setAddingNote(false);
 
-    if (error) {
-      console.error('خطأ أثناء إضافة الملاحظة:', error.message);
-    } else if (data && data.length > 0) {
+    if (!error && data && data.length > 0) {
       setNotes(prev => [data[0], ...prev]);
       setNewNoteText('');
     }
   };
 
-  // حذف ملاحظة محددة
   const handleDeleteNote = async (noteId) => {
     const { error } = await supabase
       .from('notes')
@@ -173,7 +177,6 @@ function CourseContent() {
     }
   };
 
-  // تحديث حالة إتمام الدرس (مع إطلاق الكونفيتي لو أصبح مكتملاً)
   const toggleComplete = async (lessonId) => {
     if (!userId) {
       alert('يجب تسجيل الدخول لحفظ تقدمك!');
@@ -192,15 +195,13 @@ function CourseContent() {
         { user_id: userId, lesson_id: lessonId, is_completed: true }
       ], { onConflict: 'user_id, lesson_id' });
       
-      // إطلاق الاحتفال عند إتمام الدرس! 🎊
+      // إطلاق الاحتفال المبهج! 🎉
       triggerConfetti();
     }
   };
 
-  // معالجة تأكيد إجابة الكويز
   const handleSubmitQuizAnswer = () => {
     setIsAnswerSubmitted(true);
-    // لو الإجابة صحيحة، نطلق احتفال الكونفيتي أيضاً! 🌟
     if (selectedOption === quiz.correct_option_index) {
       triggerConfetti();
     }
@@ -232,7 +233,6 @@ function CourseContent() {
     <div className="min-h-screen bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-white p-6 md:p-10 transition-colors duration-200" dir="rtl">
       <div className="max-w-4xl mx-auto space-y-6">
         
-        {/* رأس الكورس وشريط التقدم */}
         <div className="bg-white dark:bg-[#1e293b] p-6 rounded-2xl border border-slate-200 dark:border-gray-800 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <Link href="/dashboard" className="text-blue-600 dark:text-blue-400 hover:underline mb-2 inline-block text-sm">
@@ -247,7 +247,6 @@ function CourseContent() {
           </div>
         </div>
 
-        {/* قائمة الدروس */}
         <div className="bg-white dark:bg-[#1e293b] p-6 rounded-2xl border border-slate-200 dark:border-gray-800 shadow-lg">
           <h3 className="text-lg font-semibold mb-3 text-slate-800 dark:text-gray-200">قائمة دروس الكورس</h3>
           <div className="flex flex-wrap gap-2">
@@ -310,10 +309,9 @@ function CourseContent() {
               <p>{activeLesson.content || 'لا يوجد وصف نصي إضافي لهذا الدرس.'}</p>
             </div>
 
-            {/* قسم الملاحظات المتعددة */}
             <div className="bg-slate-50 dark:bg-[#0f172a] p-5 rounded-xl border border-slate-200 dark:border-gray-800 space-y-4">
               <h4 className="font-bold text-amber-500 dark:text-amber-400 text-sm flex items-center gap-2">
-                <span>📝 ملاحظاتي الشخصية (يمكنك إضافة عدة ملاحظات)</span>
+                <span>📝 ملاحظاتي الشخصية</span>
               </h4>
 
               <form onSubmit={handleAddNote} className="space-y-2">
@@ -355,7 +353,6 @@ function CourseContent() {
               </div>
             </div>
 
-            {/* قسم الكويز والاختبار */}
             {quiz && (
               <div className="bg-slate-50 dark:bg-[#0f172a] p-6 rounded-xl border border-blue-200 dark:border-blue-900/50 space-y-4">
                 <h4 className="text-base font-bold text-green-600 dark:text-green-400">📝 اختبار قصير للدرس:</h4>
