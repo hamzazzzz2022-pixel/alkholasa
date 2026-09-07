@@ -10,19 +10,17 @@
 .rgb-card-wrapper {
   position: relative;
   border-radius: 26px;
-  padding: 3px; /* سمك الإطار الملون */
-  background: conic-gradient(
-    from 0deg,
-    #ff0055,
-    #ffcc00,
-    #00ff66,
-    #00ffff,
-    #0066ff,
-    #cc00ff,
-    #ff0055
-  );
-  animation: rgb-spin 3s linear infinite;
+  padding: 3px;
+  background: linear-gradient(60deg, #ff0055, #ffcc00, #00ff66, #00ffff, #0066ff, #cc00ff);
+  background-size: 300% 300%;
+  animation: rgb-gradient-move 4s ease infinite;
   transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+@keyframes rgb-gradient-move {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .rgb-card-wrapper:hover {
