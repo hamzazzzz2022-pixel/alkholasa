@@ -100,38 +100,39 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 dir-rtl flex flex-col items-center transition-colors duration-200">
       
-      {/* ستايل الإطار المتحرك المضيء (مضمن داخل الصفحة) */}
+      {/* تنسيقات الإطار المتحرك مع اجبار المتصفح بتطبيقها (!important) */}
       <style jsx global>{`
-        .course-animated-card {
-          position: relative;
-          width: 100%;
-          border-radius: 22px;
-          background: #0d1226;
-          overflow: hidden;
+        .force-animated-card {
+          position: relative !important;
+          width: 100% !important;
+          height: 240px !important;
+          border-radius: 22px !important;
+          background: #0d1226 !important;
+          overflow: hidden !important;
         }
 
-        .course-card-content {
-          position: absolute;
-          inset: 1px;
-          border-radius: 21px;
-          background: #0f1428;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          text-align: right;
-          color: #f8fafc;
-          padding: 24px;
-          z-index: 2;
+        .force-card-content {
+          position: absolute !important;
+          inset: 1px !important;
+          border-radius: 21px !important;
+          background: #0f1428 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          justify-content: space-between !important;
+          text-align: right !important;
+          color: #f8fafc !important;
+          padding: 24px !important;
+          z-index: 2 !important;
         }
 
-        .course-animated-card::before,
-        .course-animated-card::after {
-          content: "";
-          position: absolute;
-          left: -50%;
-          top: -50%;
-          width: 200%;
-          height: 200%;
+        .force-animated-card::before,
+        .force-animated-card::after {
+          content: "" !important;
+          position: absolute !important;
+          left: -50% !important;
+          top: -50% !important;
+          width: 200% !important;
+          height: 200% !important;
           background: conic-gradient(
             transparent 0deg,
             transparent 130deg,
@@ -145,13 +146,13 @@ export default function DashboardPage() {
             #818cf8 340deg,
             #f0abfc 350deg,
             #22d3ee 360deg
-          );
-          animation: spin 6s linear infinite;
+          ) !important;
+          animation: spin 6s linear infinite !important;
         }
 
-        .course-animated-card::after {
-          filter: blur(30px);
-          opacity: 0.8;
+        .force-animated-card::after {
+          filter: blur(30px) !important;
+          opacity: 0.8 !important;
         }
 
         @keyframes spin {
@@ -223,9 +224,9 @@ export default function DashboardPage() {
               {courses.map((course) => (
                 <div 
                   key={course.id} 
-                  className="course-animated-card h-60 shadow-xl"
+                  className="force-animated-card shadow-xl"
                 >
-                  <div className="course-card-content">
+                  <div className="force-card-content">
                     <div className="space-y-2">
                       <span className="text-[10px] bg-cyan-500/15 text-cyan-400 px-2.5 py-1 rounded-full font-semibold inline-block">
                         {course.category}
