@@ -2,77 +2,60 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-@import "tailwindcss";
+/* تأثير إطار RGB المتحرك والمضيء */
+@keyframes rgb-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
-@custom-variant dark (&:where(.dark, .dark *));
-
-/* كارت الإطار المتحرك والمضيء */
-.glowing-course-card {
+.rgb-card-wrapper {
   position: relative;
-  width: 100%;
-  min-height: 220px;
   border-radius: 24px;
-  background: #0d1226;
   overflow: hidden;
+  padding: 2px;
+  background: transparent;
   transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
 
-.glowing-course-card:hover {
+.rgb-card-wrapper:hover {
   transform: translateY(-6px);
-  box-shadow: 0 15px 35px rgba(34, 211, 238, 0.25);
+  box-shadow: 0 15px 35px rgba(255, 0, 128, 0.25);
 }
 
-.glowing-course-content {
-  position: absolute;
-  inset: 2px;
-  border-radius: 22px;
-  background: #0f1428;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  text-align: right;
-  color: #f8fafc;
-  padding: 24px;
-  z-index: 2;
-}
-
-.glowing-course-card::before,
-.glowing-course-card::after {
+.rgb-card-wrapper::before {
   content: "";
   position: absolute;
-  left: -50%;
-  top: -50%;
-  width: 200%;
-  height: 200%;
+  inset: -50%;
   background: conic-gradient(
-    transparent 0deg,
-    transparent 130deg,
-    #22d3ee 145deg,
-    #818cf8 160deg,
-    #f0abfc 170deg,
-    #22d3ee 180deg,
-    transparent 181deg,
-    transparent 310deg,
-    #22d3ee 325deg,
-    #818cf8 340deg,
-    #f0abfc 350deg,
-    #22d3ee 360deg
+    from 0deg,
+    #ff0000,
+    #ff7f00,
+    #ffff00,
+    #00ff00,
+    #00ffff,
+    #0000ff,
+    #8b00ff,
+    #ff0000
   );
-  animation: spin 5s linear infinite;
+  animation: rgb-spin 4s linear infinite;
+  z-index: 1;
+  opacity: 0.7;
   transition: opacity 0.3s ease;
 }
 
-.glowing-course-card::after {
-  filter: blur(25px);
-  opacity: 0.6;
-}
-
-.glowing-course-card:hover::before,
-.glowing-course-card:hover::after {
+.rgb-card-wrapper:hover::before {
   opacity: 1;
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.rgb-card-inner {
+  position: relative;
+  background: #0f1428;
+  border-radius: 22px;
+  padding: 24px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 220px;
+  color: #f8fafc;
 }
