@@ -146,43 +146,24 @@ export default function DashboardPage() {
               {courses.map((course) => (
                 <div 
                   key={course.id}
-                  style={{
-                    backgroundColor: '#0f1428',
-                    borderRadius: '24px',
-                    padding: '24px',
-                    border: '1px solid rgba(34, 211, 238, 0.3)',
-                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3)',
-                    transition: 'all 0.3s ease',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    minHeight: '220px'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-6px)';
-                    e.currentTarget.style.boxShadow = '0 15px 35px rgba(34, 211, 238, 0.4)';
-                    e.currentTarget.style.borderColor = '#22d3ee';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0px)';
-                    e.currentTarget.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.3)';
-                    e.currentTarget.style.borderColor = 'rgba(34, 211, 238, 0.3)';
-                  }}
+                  className="relative p-[3px] rounded-3xl bg-gradient-to-r from-red-500 via-green-500 to-blue-500 hover:scale-[1.02] transition-all duration-300 shadow-xl"
                 >
-                  <div className="space-y-2">
-                    <span className="text-[10px] bg-cyan-500/15 text-cyan-400 px-2.5 py-1 rounded-full font-semibold inline-block">
-                      {course.category}
-                    </span>
-                    <h3 className="text-lg font-bold text-white">{course.title}</h3>
-                    <p className="text-xs text-slate-300 line-clamp-2">{course.description}</p>
+                  <div className="bg-[#0f1428] rounded-[22px] p-6 flex flex-col justify-between min-h-[220px] text-slate-100 h-full">
+                    <div className="space-y-2">
+                      <span className="text-[10px] bg-cyan-500/15 text-cyan-400 px-2.5 py-1 rounded-full font-semibold inline-block">
+                        {course.category}
+                      </span>
+                      <h3 className="text-lg font-bold text-white">{course.title}</h3>
+                      <p className="text-xs text-slate-300 line-clamp-2">{course.description}</p>
+                    </div>
+                    
+                    <Link 
+                      href={`/course?id=${course.id}`} 
+                      className="block text-center w-full py-2.5 mt-4 bg-gradient-to-r from-cyan-400 to-indigo-500 hover:opacity-90 text-slate-950 font-bold rounded-xl text-xs transition-all duration-300"
+                    >
+                      دخول الكورس ➔
+                    </Link>
                   </div>
-                  
-                  <Link 
-                    href={`/course?id=${course.id}`} 
-                    className="block text-center w-full py-2.5 mt-4 bg-gradient-to-r from-cyan-400 to-indigo-500 hover:opacity-90 text-slate-950 font-bold rounded-xl text-xs transition-all duration-300"
-                  >
-                    دخول الكورس ➔
-                  </Link>
                 </div>
               ))}
             </div>
