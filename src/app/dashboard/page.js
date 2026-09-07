@@ -39,7 +39,7 @@ export default function DashboardPage() {
         }
 
         // 2. فحص وتحديث الـ Streak تلقائياً عند فتح اللوحة
-        const today = new Date().toISOString().split('T')[0]; // تاريخ اليوم YYYY-MM-DD
+        const today = new Date().toISOString().split('T')[0];
         let { data: streakData } = await supabase
           .from('user_streaks')
           .select('*')
@@ -47,7 +47,6 @@ export default function DashboardPage() {
           .maybeSingle();
 
         if (!streakData) {
-          // لو أول مرة يفتح المنصة
           await supabase.from('user_streaks').insert([
             { user_id: currentUser.id, current_streak: 1, last_activity_date: today }
           ]);
@@ -58,10 +57,8 @@ export default function DashboardPage() {
           const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
           if (diffDays === 0) {
-            // فتحها اليوم مسبقاً
             setStreak(streakData.current_streak);
           } else if (diffDays === 1) {
-            // استمرت السلسلة (دخل أمس واليوم)
             const newStreak = streakData.current_streak + 1;
             await supabase
               .from('user_streaks')
@@ -69,7 +66,6 @@ export default function DashboardPage() {
               .eq('user_id', currentUser.id);
             setStreak(newStreak);
           } else {
-            // انقطعت السلسلة (فات يوم أو أكثر)
             await supabase
               .from('user_streaks')
               .update({ current_streak: 1, last_activity_date: today, updated_at: new Date() })
@@ -103,6 +99,67 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 dir-rtl flex flex-col items-center transition-colors duration-200">
+      
+      {/* ستايل الإطار المتحرك المضيء (مضمن داخل الصفحة) */}
+      <style jsx global>{`
+        .course-animated-card {
+          position: relative;
+          width: 100%;
+          border-radius: 22px;
+          background: #0d1226;
+          overflow: hidden;
+        }
+
+        .course-card-content {
+          position: absolute;
+          inset: 1px;
+          border-radius: 21px;
+          background: #0f1428;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          text-align: right;
+          color: #f8fafc;
+          padding: 24px;
+          z-index: 2;
+        }
+
+        .course-animated-card::before,
+        .course-animated-card::after {
+          content: "";
+          position: absolute;
+          left: -50%;
+          top: -50%;
+          width: 200%;
+          height: 200%;
+          background: conic-gradient(
+            transparent 0deg,
+            transparent 130deg,
+            #22d3ee 145deg,
+            #818cf8 160deg,
+            #f0abfc 170deg,
+            #22d3ee 180deg,
+            transparent 181deg,
+            transparent 310deg,
+            #22d3ee 325deg,
+            #818cf8 340deg,
+            #f0abfc 350deg,
+            #22d3ee 360deg
+          );
+          animation: spin 6s linear infinite;
+        }
+
+        .course-animated-card::after {
+          filter: blur(30px);
+          opacity: 0.8;
+        }
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+
       <div className="max-w-4xl w-full space-y-8">
         
         {/* Header */}
@@ -126,7 +183,6 @@ export default function DashboardPage() {
 
             <ThemeToggle /> 
 
-            {/* زر لوحة الإدارة للمشرف فقط */}
             {user?.email === "hamzazzzz2022@gmail.com" && (
               <Link 
                 href="/admin" 
@@ -163,25 +219,27 @@ export default function DashboardPage() {
               لا توجد كورسات متاحة حالياً. انتظر المشرف ليضيف كورسات جديدة!
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {courses.map((course) => (
                 <div 
                   key={course.id} 
-                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl space-y-3 shadow-md flex flex-col justify-between transition-colors duration-200"
+                  className="course-animated-card h-60 shadow-xl"
                 >
-                  <div className="space-y-2">
-                    <span className="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2.5 py-1 rounded-full font-semibold">
-                      {course.category}
-                    </span>
-                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">{course.title}</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{course.description}</p>
+                  <div className="course-card-content">
+                    <div className="space-y-2">
+                      <span className="text-[10px] bg-cyan-500/15 text-cyan-400 px-2.5 py-1 rounded-full font-semibold inline-block">
+                        {course.category}
+                      </span>
+                      <h3 className="text-lg font-bold text-white">{course.title}</h3>
+                      <p className="text-xs text-slate-300 line-clamp-2">{course.description}</p>
+                    </div>
+                    <Link 
+                      href={`/course?id=${course.id}`} 
+                      className="block text-center w-full py-2.5 bg-gradient-to-r from-cyan-400 to-indigo-500 hover:opacity-90 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg"
+                    >
+                      دخول الكورس ➔
+                    </Link>
                   </div>
-                  <Link 
-                    href={`/course?id=${course.id}`} 
-                    className="block text-center w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition"
-                  >
-                    دخول الكورس ➔
-                  </Link>
                 </div>
               ))}
             </div>
