@@ -12,8 +12,6 @@ export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // حالة سلسلة الحماس (Streak)
   const [streak, setStreak] = useState(0);
 
   useEffect(() => {
@@ -28,7 +26,6 @@ export default function DashboardPage() {
         const currentUser = session.user;
         setUser(currentUser);
 
-        // 1. جلب الدورات التعليمية
         const { data: coursesData, error: coursesError } = await supabase
           .from('courses')
           .select('*')
@@ -38,7 +35,6 @@ export default function DashboardPage() {
           setCourses(coursesData);
         }
 
-        // 2. فحص وتحديث الـ Streak تلقائياً عند فتح اللوحة
         const today = new Date().toISOString().split('T')[0];
         let { data: streakData } = await supabase
           .from('user_streaks')
@@ -73,9 +69,8 @@ export default function DashboardPage() {
             setStreak(1);
           }
         }
-
       } catch (err) {
-        console.error('خطأ في جلب بيانات لوحة التحكم:', err);
+        console.error('خطأ:', err);
       } finally {
         setLoading(false);
       }
@@ -91,48 +86,54 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex items-center justify-center dir-rtl">
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
         <p className="text-sm font-medium animate-pulse">جاري التحميل...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 dir-rtl flex flex-col items-center transition-colors duration-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 dir-rtl flex flex-col items-center">
       
-      {/* تنسيقات الإطار المتحرك مع اجبار المتصفح بتطبيقها (!important) */}
+      {/* ستايل الإطار المتحرك مع تأثير الـ Hover والـ Transition */}
       <style jsx global>{`
-        .force-animated-card {
-          position: relative !important;
-          width: 100% !important;
-          height: 240px !important;
-          border-radius: 22px !important;
-          background: #0d1226 !important;
-          overflow: hidden !important;
+        . glowing-course-card {
+          position: relative;
+          width: 100%;
+          min-height: 210px;
+          border-radius: 24px;
+          background: #0d1226;
+          overflow: hidden;
+          transition: transform 0.4s ease, box-shadow 0.4s ease;
         }
 
-        .force-card-content {
-          position: absolute !important;
-          inset: 1px !important;
-          border-radius: 21px !important;
-          background: #0f1428 !important;
-          display: flex !important;
-          flex-direction: column !important;
-          justify-content: space-between !important;
-          text-align: right !important;
-          color: #f8fafc !important;
-          padding: 24px !important;
-          z-index: 2 !important;
+        .glowing-course-card:hover {
+          transform: translateY(-6px);
+          box-shadow: 0 15px 35px rgba(34, 211, 238, 0.2);
         }
 
-        .force-animated-card::before,
-        .force-animated-card::after {
-          content: "" !important;
-          position: absolute !important;
-          left: -50% !important;
-          top: -50% !important;
-          width: 200% !important;
-          height: 200% !important;
+        .glowing-course-content {
+          position: absolute;
+          inset: 2px;
+          border-radius: 22px;
+          background: #0f1428;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          text-align: right;
+          color: #f8fafc;
+          padding: 24px;
+          z-index: 2;
+        }
+
+        .glowing-course-card::before,
+        .glowing-course-card::after {
+          content: "";
+          position: absolute;
+          left: -50%;
+          top: -50%;
+          width: 200%;
+          height: 200%;
           background: conic-gradient(
             transparent 0deg,
             transparent 130deg,
@@ -146,13 +147,19 @@ export default function DashboardPage() {
             #818cf8 340deg,
             #f0abfc 350deg,
             #22d3ee 360deg
-          ) !important;
-          animation: spin 6s linear infinite !important;
+          );
+          animation: spin 5s linear infinite;
+          transition: opacity 0.3s ease;
         }
 
-        .force-animated-card::after {
-          filter: blur(30px) !important;
-          opacity: 0.8 !important;
+        .glowing-course-card::after {
+          filter: blur(25px);
+          opacity: 0.6;
+        }
+
+        .glowing-course-card:hover::before,
+        .glowing-course-card:hover::after {
+          opacity: 1;
         }
 
         @keyframes spin {
@@ -164,19 +171,18 @@ export default function DashboardPage() {
       <div className="max-w-4xl w-full space-y-8">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-lg transition-colors duration-200">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-lg">
           <div>
             <h1 className="text-lg font-bold text-blue-600 dark:text-blue-500">منصة الخلاصة🎓</h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">مرحباً بك، {user?.email}</p>
           </div>
           
           <div className="flex items-center flex-wrap gap-3">
-            {/* ويدجت الـ Streak المشتعل 🔥 */}
-            <div className="bg-slate-100 dark:bg-slate-800/80 border border-orange-500/30 px-3 py-1.5 rounded-xl flex items-center gap-2 shadow-inner">
+            <div className="bg-slate-100 dark:bg-slate-800/85 border border-orange-500/30 px-3 py-1.5 rounded-xl flex items-center gap-2">
               <span className="text-xl animate-bounce">🔥</span>
               <div>
-                <div className="text-[9px] text-slate-400 dark:text-slate-400 font-medium leading-none">سلسلة الحماس</div>
-                <div className="text-xs font-extrabold text-orange-500 dark:text-orange-400 mt-0.5">
+                <div className="text-[9px] text-slate-400 font-medium leading-none">سلسلة الحماس</div>
+                <div className="text-xs font-extrabold text-orange-500 mt-0.5">
                   {streak} {streak === 1 ? 'يوم متتالي' : 'أيام متتالية'}
                 </div>
               </div>
@@ -185,48 +191,35 @@ export default function DashboardPage() {
             <ThemeToggle /> 
 
             {user?.email === "hamzazzzz2022@gmail.com" && (
-              <Link 
-                href="/admin" 
-                className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-md shadow-blue-600/25"
-              >
+              <Link href="/admin" className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition">
                 لوحة الإدارة 🛠️
               </Link>
             )}
 
-            <Link 
-              href="/profile" 
-              className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl transition"
-            >
+            <Link href="/profile" className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl transition">
               الملف الشخصي 👤
             </Link>
 
-            <button 
-              onClick={handleLogout} 
-              className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer"
-            >
+            <button onClick={handleLogout} className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer">
               تسجيل الخروج
             </button>
           </div>
         </div>
 
-        {/* Student Stats Component */}
         {user && <StudentStats userId={user.id} />}
 
         {/* Courses Section */}
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200">الدورات التعليمية المتاحة 📚</h2>
           {courses.length === 0 ? (
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-2xl text-center text-slate-500 dark:text-slate-400 text-sm">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-2xl text-center text-slate-500 text-sm">
               لا توجد كورسات متاحة حالياً. انتظر المشرف ليضيف كورسات جديدة!
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {courses.map((course) => (
-                <div 
-                  key={course.id} 
-                  className="force-animated-card shadow-xl"
-                >
-                  <div className="force-card-content">
+                <div key={course.id} className="glowing-course-card">
+                  <div className="glowing-course-content">
                     <div className="space-y-2">
                       <span className="text-[10px] bg-cyan-500/15 text-cyan-400 px-2.5 py-1 rounded-full font-semibold inline-block">
                         {course.category}
@@ -236,7 +229,7 @@ export default function DashboardPage() {
                     </div>
                     <Link 
                       href={`/course?id=${course.id}`} 
-                      className="block text-center w-full py-2.5 bg-gradient-to-r from-cyan-400 to-indigo-500 hover:opacity-90 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg"
+                      className="block text-center w-full py-2.5 bg-gradient-to-r from-cyan-400 to-indigo-500 hover:opacity-90 text-slate-950 font-bold rounded-xl text-xs transition-all duration-300"
                     >
                       دخول الكورس ➔
                     </Link>
