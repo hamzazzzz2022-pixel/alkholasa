@@ -14,9 +14,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
 
-  // حالات للـ Hover لكل كارت بناءً على الـ ID بتاعه
-  const [hoveredCard, setHoveredCard] = useState(null);
-
   useEffect(() => {
     const fetchUserDataAndCourses = async () => {
       try {
@@ -147,45 +144,45 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {courses.map((course) => {
-                const isHovered = hoveredCard === course.id;
-                return (
-                  <div 
-                    key={course.id}
-                    onMouseEnter={() => setHoveredCard(course.id)}
-                    onMouseLeave={() => setHoveredCard(null)}
-                    style={{
-                      backgroundColor: '#0f1428',
-                      borderRadius: '24px',
-                      padding: '24px',
-                      border: isHovered ? '2px solid #22d3ee' : '1px solid rgba(34, 211, 238, 0.2)',
-                      boxShadow: isHovered ? '0 15px 35px rgba(34, 211, 238, 0.3)' : '0 10px 25px rgba(0, 0, 0, 0.2)',
-                      transform: isHovered ? 'translateY(-8px) scale(1.02)' : 'translateY(0px) scale(1)',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      minHeight: '220px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <div className="space-y-2">
-                      <span className="text-[10px] bg-cyan-500/15 text-cyan-400 px-2.5 py-1 rounded-full font-semibold inline-block">
-                        {course.category}
-                      </span>
-                      <h3 className="text-lg font-bold text-white">{course.title}</h3>
-                      <p className="text-xs text-slate-300 line-clamp-2">{course.description}</p>
-                    </div>
-                    
-                    <Link 
-                      href={`/course?id=${course.id}`} 
-                      className="block text-center w-full py-2.5 mt-4 bg-gradient-to-r from-cyan-400 to-indigo-500 hover:opacity-90 text-slate-950 font-bold rounded-xl text-xs transition-all duration-300"
-                    >
-                      دخول الكورس ➔
-                    </Link>
+              {courses.map((course) => (
+                <div 
+                  key={course.id} 
+                  style={{
+                    backgroundColor: '#111827',
+                    borderRadius: '20px',
+                    padding: '24px',
+                    border: '2px solid #3b82f6',
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+                    transition: 'all 0.3s ease-in-out',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-8px)';
+                    e.currentTarget.style.boxShadow = '0 20px 40px rgba(59, 130, 246, 0.4)';
+                    e.currentTarget.style.borderColor = '#60a5fa';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0px)';
+                    e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.3)';
+                    e.currentTarget.style.borderColor = '#3b82f6';
+                  }}
+                >
+                  <div className="space-y-2">
+                    <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2.5 py-1 rounded-full font-semibold inline-block">
+                      {course.category} - (محدث)
+                    </span>
+                    <h3 className="text-lg font-bold text-white">{course.title}</h3>
+                    <p className="text-xs text-slate-300 line-clamp-2">{course.description}</p>
                   </div>
-                );
-              })}
+                  
+                  <Link 
+                    href={`/course?id=${course.id}`} 
+                    className="block text-center w-full py-2.5 mt-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-all duration-300"
+                  >
+                    دخول الكورس ➔
+                  </Link>
+                </div>
+              ))}
             </div>
           )}
         </div>
