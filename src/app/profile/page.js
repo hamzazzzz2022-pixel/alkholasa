@@ -63,9 +63,9 @@ export default function ProfilePage() {
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      // رفع الصورة لـ Supabase Storage (Bucket: avatars)
+      // رفع الصورة لـ Supabase Storage (Bucket: avatar)
       const { error: uploadError } = await supabase.storage
-        .from('avatars')
+        .from('avatar')
         .upload(filePath, file, { upsert: true });
 
       if (uploadError) {
@@ -74,7 +74,7 @@ export default function ProfilePage() {
 
       // الحصول على الرابط العام للصورة
       const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
+        .from('avatar')
         .getPublicUrl(filePath);
 
       setAvatarUrl(publicUrl);
