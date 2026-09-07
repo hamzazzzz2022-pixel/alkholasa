@@ -1,171 +1,175 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { supabase } from '@/supabase';
-import ThemeToggle from '@/components/ThemeToggle';
+import Link from 'next/link';
 
 export default function ProfilePage() {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [user, setUser] = useState(null);
-  const [fullName, setFullName] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
-  const [message, setMessage] = useState({ text: '', type: '' });
   const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/login');
-        return;
+    const fetchUserProfile = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          router.push('/login');
+          return;
+        }
+
+        const currentUser = session.user;
+        setUser(currentUser);
+
+        // جلب بيانات الملف الشخصي من جدول profiles (إن وجد) أو استخدام الـ metadata
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+
+        if (profileData) {
+          setAvatarUrl(profileData.avatar_url || '');
+          setFullName(profileData.full_name || '');
+        }
+      } catch (err) {
+        console.error('خطأ في جلب البيانات:', err);
+      } finally {
+        setLoading(false);
       }
-      
-      const currentUser = session.user;
-      setUser(currentUser);
-      setFullName(currentUser.user_metadata?.full_name || '');
-      setAvatarUrl(currentUser.user_metadata?.avatar_url || '');
-      setLoading(false);
     };
 
-    fetchUserData();
+    fetchUserProfile();
   }, [router]);
 
-  const handleUpdateProfile = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    setMessage({ text: '', type: '' });
-
+  // دالة رفع الصورة
+  const handleAvatarUpload = async (e) => {
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          full_name: fullName,
-          avatar_url: avatarUrl,
-        },
-      });
+      setUploading(true);
+      setMessage('');
+      const file = e.target.files[0];
+      if (!file) return;
 
-      if (error) throw error;
-      setMessage({ text: 'تم تحديث بياناتك بنجاح! 🎉', type: 'success' });
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      // رفع الصورة لـ Supabase Storage (Bucket: avatars)
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // الحصول على الرابط العام للصورة
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      setAvatarUrl(publicUrl);
+
+      // حفظ الرابط في جدول profiles
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          avatar_url: publicUrl,
+          updated_at: new Date(),
+        });
+
+      if (updateError) throw updateError;
+
+      setMessage('تم تحديث صورة الملف الشخصي بنجاح! ✨');
     } catch (error) {
-      setMessage({ text: 'حدث خطأ أثناء التحديث: ' + error.message, type: 'error' });
+      console.error('خطأ أثناء الرفع:', error.message);
+      setMessage('حدث خطأ أثناء رفع الصورة، حاول مرة أخرى.');
     } finally {
-      setSaving(false);
+      setUploading(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex items-center justify-center dir-rtl">
-        <p className="text-lg font-medium">جاري تحميل بيانات الملف الشخصي...</p>
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
+        <p className="text-sm font-medium animate-pulse">جاري التحميل...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white dir-rtl flex flex-col transition-colors duration-300">
-      {/* Header */}
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex justify-between items-center sticky top-0 z-10 transition-colors duration-300">
-        <Link 
-          href="/dashboard" 
-          className="flex items-center gap-3 group transition-transform duration-300 ease-in-out hover:scale-105"
-        >
-          <div className="relative w-10 h-10 overflow-hidden rounded-full border border-slate-300 dark:border-slate-700/50 group-hover:border-blue-500 transition-colors duration-300">
-            <img 
-              src="/logo.png" 
-              alt="منصة الخلاصة 📃" 
-              className="w-full h-full object-cover group-hover:rotate-6 transition-transform duration-300"
-            />
-          </div>
-          <span className="text-xl font-bold text-blue-600 dark:text-blue-500 group-hover:text-blue-500 transition-colors duration-300">
-            منصة الخلاصة 📃
-          </span>
-        </Link>
-
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          <Link
-            href="/dashboard"
-            className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs font-semibold transition bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 px-4 py-2 rounded-xl"
-          >
-            العودة للوحة التحكم ➔
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 dir-rtl flex flex-col items-center transition-colors duration-500">
+      <div className="max-w-xl w-full space-y-6">
+        
+        {/* Header Navigation */}
+        <div className="flex justify-between items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-lg">
+          <h1 className="text-lg font-bold text-blue-600 dark:text-blue-500">الملف الشخصي 👤</h1>
+          <Link href="/dashboard" className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs font-semibold px-4 py-2 rounded-xl transition">
+            العودة للرئيسية ➔
           </Link>
         </div>
-      </header>
 
-      {/* Profile Main Section */}
-      <main className="max-w-2xl w-full mx-auto p-6 space-y-6 flex-1 my-8">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 space-y-6 shadow-sm transition-colors duration-300">
-          <div className="flex items-center gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
-            <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-600/20 border border-blue-300 dark:border-blue-500/30 flex items-center justify-center overflow-hidden">
+        {/* Profile Card */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-3xl shadow-xl flex flex-col items-center text-center space-y-6">
+          
+          {/* Avatar Container */}
+          <div className="relative group">
+            <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-blue-500/30 shadow-inner bg-slate-800 flex items-center justify-center">
               {avatarUrl ? (
-                <img src={avatarUrl} alt="الصورة الشخصية" className="w-full h-full object-cover" />
+                <img src={avatarUrl} alt="صورة الملف الشخصي" className="w-full h-full object-cover" />
               ) : (
-                <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {fullName ? fullName[0].toUpperCase() : user?.email[0].toUpperCase()}
-                </span>
+                <span className="text-3xl text-slate-400">👤</span>
               )}
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{fullName || 'طالب ذاكرلي'}</h2>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">{user?.email}</p>
-            </div>
+
+            {/* Upload Overlay Button */}
+            <label className="absolute inset-0 bg-black/60 rounded-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white text-xs font-semibold">
+              <span>{uploading ? 'جاري الرفع...' : 'تغيير الصورة'}</span>
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={handleAvatarUpload} 
+                disabled={uploading}
+                className="hidden" 
+              />
+            </label>
           </div>
 
-          {message.text && (
-            <div className={`p-4 rounded-xl text-sm font-medium ${
-              message.type === 'success' 
-                ? 'bg-green-100 dark:bg-green-500/10 border border-green-300 dark:border-green-500/30 text-green-700 dark:text-green-400' 
-                : 'bg-red-100 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 text-red-700 dark:text-red-400'
-            }`}>
-              {message.text}
+          <div className="space-y-1">
+            <h2 className="text-xl font-bold text-white">{fullName || 'مستخدم منصة الخلاصة'}</h2>
+            <p className="text-xs text-slate-400">{user?.email}</p>
+          </div>
+
+          {message && (
+            <div className={`text-xs px-4 py-2 rounded-xl font-medium ${message.includes('نجاح') ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'}`}>
+              {message}
             </div>
           )}
 
-          <form onSubmit={handleUpdateProfile} className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block">الاسم الكامل</label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="أدخل اسمك كما تحب أن يظهر"
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-blue-500 rounded-xl p-3 text-slate-900 dark:text-white text-sm outline-none transition"
+          {/* Direct Upload Button for Mobile/Ease */}
+          <div className="w-full pt-4 border-t border-slate-800 flex flex-col gap-3">
+            <label className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition cursor-pointer text-center block">
+              {uploading ? 'جاري الرفع...' : 'اختر صورة جديدة من جهازك 🖼️'}
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={handleAvatarUpload} 
+                disabled={uploading}
+                className="hidden" 
               />
-            </div>
+            </label>
+            <p className="text-[11px] text-slate-500">تدعم صيغ الصور (PNG, JPG, JPEG)</p>
+          </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block">رابط الصورة الشخصية (Avatar URL)</label>
-              <input
-                type="url"
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
-                placeholder="https://example.com/photo.jpg"
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 focus:border-blue-500 rounded-xl p-3 text-slate-900 dark:text-white text-sm outline-none transition text-left dir-ltr"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-500 dark:text-slate-400 block">البريد الإلكتروني (غير قابل للتعديل)</label>
-              <input
-                type="text"
-                disabled
-                value={user?.email || ''}
-                className="w-full bg-slate-100 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800/60 rounded-xl p-3 text-slate-400 dark:text-slate-500 text-sm cursor-not-allowed text-left dir-ltr"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={saving}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow-lg shadow-blue-600/20 disabled:opacity-50"
-            >
-              {saving ? 'جاري الحفظ...' : 'حفظ التغيرات'}
-            </button>
-          </form>
         </div>
-      </main>
+
+      </div>
     </div>
   );
 }
