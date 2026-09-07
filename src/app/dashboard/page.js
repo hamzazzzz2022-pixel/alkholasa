@@ -146,7 +146,10 @@ export default function DashboardPage() {
               {courses.map((course) => (
                 <div 
                   key={course.id}
-                  className="relative p-[3px] rounded-3xl bg-gradient-to-r from-red-500 via-green-500 to-blue-500 hover:scale-[1.02] transition-all duration-300 shadow-xl"
+                  className="relative p-[3px] rounded-3xl hover:scale-[1.02] transition-all duration-300 shadow-xl"
+                  style={{
+                    background: 'linear-gradient(135deg, #ef4444, #f59e0b, #10b981, #06b6d4, #8b5cf6, #ec4899)'
+                  }}
                 >
                   <div className="bg-[#0f1428] rounded-[22px] p-6 flex flex-col justify-between min-h-[220px] text-slate-100 h-full">
                     <div className="space-y-2">
