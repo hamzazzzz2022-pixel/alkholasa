@@ -14,6 +14,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
 
+  // حالات للـ Hover لكل كارت بناءً على الـ ID بتاعه
+  const [hoveredCard, setHoveredCard] = useState(null);
+
   useEffect(() => {
     const fetchUserDataAndCourses = async () => {
       try {
@@ -144,27 +147,45 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {courses.map((course) => (
-                <div 
-                  key={course.id} 
-                  className="group relative bg-[#0f1428] rounded-3xl p-6 border border-cyan-500/20 shadow-xl transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_15px_35px_rgba(34,211,238,0.3)] hover:border-cyan-400 flex flex-col justify-between min-h-[220px]"
-                >
-                  <div className="space-y-2">
-                    <span className="text-[10px] bg-cyan-500/15 text-cyan-400 px-2.5 py-1 rounded-full font-semibold inline-block">
-                      {course.category}
-                    </span>
-                    <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors">{course.title}</h3>
-                    <p className="text-xs text-slate-300 line-clamp-2">{course.description}</p>
-                  </div>
-                  
-                  <Link 
-                    href={`/course?id=${course.id}`} 
-                    className="block text-center w-full py-2.5 mt-4 bg-gradient-to-r from-cyan-400 to-indigo-500 hover:opacity-90 text-slate-950 font-bold rounded-xl text-xs transition-all duration-300"
+              {courses.map((course) => {
+                const isHovered = hoveredCard === course.id;
+                return (
+                  <div 
+                    key={course.id}
+                    onMouseEnter={() => setHoveredCard(course.id)}
+                    onMouseLeave={() => setHoveredCard(null)}
+                    style={{
+                      backgroundColor: '#0f1428',
+                      borderRadius: '24px',
+                      padding: '24px',
+                      border: isHovered ? '2px solid #22d3ee' : '1px solid rgba(34, 211, 238, 0.2)',
+                      boxShadow: isHovered ? '0 15px 35px rgba(34, 211, 238, 0.3)' : '0 10px 25px rgba(0, 0, 0, 0.2)',
+                      transform: isHovered ? 'translateY(-8px) scale(1.02)' : 'translateY(0px) scale(1)',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      minHeight: '220px',
+                      cursor: 'pointer'
+                    }}
                   >
-                    دخول الكورس ➔
-                  </Link>
-                </div>
-              ))}
+                    <div className="space-y-2">
+                      <span className="text-[10px] bg-cyan-500/15 text-cyan-400 px-2.5 py-1 rounded-full font-semibold inline-block">
+                        {course.category}
+                      </span>
+                      <h3 className="text-lg font-bold text-white">{course.title}</h3>
+                      <p className="text-xs text-slate-300 line-clamp-2">{course.description}</p>
+                    </div>
+                    
+                    <Link 
+                      href={`/course?id=${course.id}`} 
+                      className="block text-center w-full py-2.5 mt-4 bg-gradient-to-r from-cyan-400 to-indigo-500 hover:opacity-90 text-slate-950 font-bold rounded-xl text-xs transition-all duration-300"
+                    >
+                      دخول الكورس ➔
+                    </Link>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
