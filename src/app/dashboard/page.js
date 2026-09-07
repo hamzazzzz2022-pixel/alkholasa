@@ -86,25 +86,25 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center transition-colors duration-500">
         <p className="text-sm font-medium animate-pulse">جاري التحميل...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 dir-rtl flex flex-col items-center">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 dir-rtl flex flex-col items-center transition-colors duration-500 ease-in-out">
       <div className="max-w-4xl w-full space-y-8">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-lg">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-lg transition-colors duration-500 ease-in-out">
           <div>
             <h1 className="text-lg font-bold text-blue-600 dark:text-blue-500">منصة الخلاصة🎓</h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">مرحباً بك، {user?.email}</p>
           </div>
           
           <div className="flex items-center flex-wrap gap-3">
-            <div className="bg-slate-100 dark:bg-slate-800/85 border border-orange-500/30 px-3 py-1.5 rounded-xl flex items-center gap-2">
+            <div className="bg-slate-100 dark:bg-slate-800/85 border border-orange-500/30 px-3 py-1.5 rounded-xl flex items-center gap-2 transition-colors duration-500">
               <span className="text-xl animate-bounce">🔥</span>
               <div>
                 <div className="text-[9px] text-slate-400 font-medium leading-none">سلسلة الحماس</div>
@@ -117,16 +117,16 @@ export default function DashboardPage() {
             <ThemeToggle /> 
 
             {user?.email === "hamzazzzz2022@gmail.com" && (
-              <Link href="/admin" className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition">
+              <Link href="/admin" className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-colors duration-300">
                 لوحة الإدارة 🛠️
               </Link>
             )}
 
-            <Link href="/profile" className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl transition">
+            <Link href="/profile" className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl transition-colors duration-300">
               الملف الشخصي 👤
             </Link>
 
-            <button onClick={handleLogout} className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer">
+            <button onClick={handleLogout} className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors duration-300 cursor-pointer">
               تسجيل الخروج
             </button>
           </div>
@@ -136,9 +136,9 @@ export default function DashboardPage() {
 
         {/* Courses Section */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200">الدورات التعليمية المتاحة 📚</h2>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 transition-colors duration-500">الدورات التعليمية المتاحة 📚</h2>
           {courses.length === 0 ? (
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-2xl text-center text-slate-500 text-sm">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-2xl text-center text-slate-500 text-sm transition-colors duration-500">
               لا توجد كورسات متاحة حالياً. انتظر المشرف ليضيف كورسات جديدة!
             </div>
           ) : (
