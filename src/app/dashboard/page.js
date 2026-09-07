@@ -95,79 +95,6 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 dir-rtl flex flex-col items-center">
       
-      {/* تم تصحيح اسم الكلاس وشغال بـ Hover واحترافية كاملة */}
-      <style jsx global>{`
-        .glowing-course-card {
-          position: relative !important;
-          width: 100% !important;
-          min-height: 220px !important;
-          border-radius: 24px !important;
-          background: #0d1226 !important;
-          overflow: hidden !important;
-          transition: transform 0.4s ease, box-shadow 0.4s ease !important;
-        }
-
-        .glowing-course-card:hover {
-          transform: translateY(-6px) !important;
-          box-shadow: 0 15px 35px rgba(34, 211, 238, 0.25) !important;
-        }
-
-        .glowing-course-content {
-          position: absolute !important;
-          inset: 2px !important;
-          border-radius: 22px !important;
-          background: #0f1428 !important;
-          display: flex !important;
-          flex-direction: column !important;
-          justify-content: space-between !important;
-          text-align: right !important;
-          color: #f8fafc !important;
-          padding: 24px !important;
-          z-index: 2 !important;
-        }
-
-        .glowing-course-card::before,
-        .glowing-course-card::after {
-          content: "" !important;
-          position: absolute !important;
-          left: -50% !important;
-          top: -50% !important;
-          width: 200% !important;
-          height: 200% !important;
-          background: conic-gradient(
-            transparent 0deg,
-            transparent 130deg,
-            #22d3ee 145deg,
-            #818cf8 160deg,
-            #f0abfc 170deg,
-            #22d3ee 180deg,
-            transparent 181deg,
-            transparent 310deg,
-            #22d3ee 325deg,
-            #818cf8 340deg,
-            #f0abfc 350deg,
-            #22d3ee 360deg
-          ) !important;
-          animation: spin 5s linear infinite !important;
-          transition: opacity 0.3s ease !important;
-        }
-
-        .glowing-course-card::after {
-          filter: blur(25px) !important;
-          opacity: 0.6 !important;
-        }
-
-        .glowing-course-card:hover::before,
-        .glowing-course-card:hover::after {
-          opacity: 1 !important;
-        }
-
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
-
       <div className="max-w-4xl w-full space-y-8">
         
         {/* Header */}
@@ -218,22 +145,24 @@ export default function DashboardPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {courses.map((course) => (
-                <div key={course.id} className="glowing-course-card">
-                  <div className="glowing-course-content">
-                    <div className="space-y-2">
-                      <span className="text-[10px] bg-cyan-500/15 text-cyan-400 px-2.5 py-1 rounded-full font-semibold inline-block">
-                        {course.category}
-                      </span>
-                      <h3 className="text-lg font-bold text-white">{course.title}</h3>
-                      <p className="text-xs text-slate-300 line-clamp-2">{course.description}</p>
-                    </div>
-                    <Link 
-                      href={`/course?id=${course.id}`} 
-                      className="block text-center w-full py-2.5 bg-gradient-to-r from-cyan-400 to-indigo-500 hover:opacity-90 text-slate-950 font-bold rounded-xl text-xs transition-all duration-300"
-                    >
-                      دخول الكورس ➔
-                    </Link>
+                <div 
+                  key={course.id} 
+                  className="group relative bg-[#0f1428] rounded-3xl p-6 border border-cyan-500/20 shadow-xl transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_15px_35px_rgba(34,211,238,0.3)] hover:border-cyan-400 flex flex-col justify-between min-h-[220px]"
+                >
+                  <div className="space-y-2">
+                    <span className="text-[10px] bg-cyan-500/15 text-cyan-400 px-2.5 py-1 rounded-full font-semibold inline-block">
+                      {course.category}
+                    </span>
+                    <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors">{course.title}</h3>
+                    <p className="text-xs text-slate-300 line-clamp-2">{course.description}</p>
                   </div>
+                  
+                  <Link 
+                    href={`/course?id=${course.id}`} 
+                    className="block text-center w-full py-2.5 mt-4 bg-gradient-to-r from-cyan-400 to-indigo-500 hover:opacity-90 text-slate-950 font-bold rounded-xl text-xs transition-all duration-300"
+                  >
+                    دخول الكورس ➔
+                  </Link>
                 </div>
               ))}
             </div>
