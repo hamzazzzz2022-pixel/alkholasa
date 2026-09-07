@@ -95,45 +95,45 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 dir-rtl flex flex-col items-center">
       
-      {/* ستايل الإطار المتحرك مع تأثير الـ Hover والـ Transition */}
+      {/* تم تصحيح اسم الكلاس وشغال بـ Hover واحترافية كاملة */}
       <style jsx global>{`
-        . glowing-course-card {
-          position: relative;
-          width: 100%;
-          min-height: 210px;
-          border-radius: 24px;
-          background: #0d1226;
-          overflow: hidden;
-          transition: transform 0.4s ease, box-shadow 0.4s ease;
+        .glowing-course-card {
+          position: relative !important;
+          width: 100% !important;
+          min-height: 220px !important;
+          border-radius: 24px !important;
+          background: #0d1226 !important;
+          overflow: hidden !important;
+          transition: transform 0.4s ease, box-shadow 0.4s ease !important;
         }
 
         .glowing-course-card:hover {
-          transform: translateY(-6px);
-          box-shadow: 0 15px 35px rgba(34, 211, 238, 0.2);
+          transform: translateY(-6px) !important;
+          box-shadow: 0 15px 35px rgba(34, 211, 238, 0.25) !important;
         }
 
         .glowing-course-content {
-          position: absolute;
-          inset: 2px;
-          border-radius: 22px;
-          background: #0f1428;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          text-align: right;
-          color: #f8fafc;
-          padding: 24px;
-          z-index: 2;
+          position: absolute !important;
+          inset: 2px !important;
+          border-radius: 22px !important;
+          background: #0f1428 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          justify-content: space-between !important;
+          text-align: right !important;
+          color: #f8fafc !important;
+          padding: 24px !important;
+          z-index: 2 !important;
         }
 
         .glowing-course-card::before,
         .glowing-course-card::after {
-          content: "";
-          position: absolute;
-          left: -50%;
-          top: -50%;
-          width: 200%;
-          height: 200%;
+          content: "" !important;
+          position: absolute !important;
+          left: -50% !important;
+          top: -50% !important;
+          width: 200% !important;
+          height: 200% !important;
           background: conic-gradient(
             transparent 0deg,
             transparent 130deg,
@@ -147,19 +147,19 @@ export default function DashboardPage() {
             #818cf8 340deg,
             #f0abfc 350deg,
             #22d3ee 360deg
-          );
-          animation: spin 5s linear infinite;
-          transition: opacity 0.3s ease;
+          ) !important;
+          animation: spin 5s linear infinite !important;
+          transition: opacity 0.3s ease !important;
         }
 
         .glowing-course-card::after {
-          filter: blur(25px);
-          opacity: 0.6;
+          filter: blur(25px) !important;
+          opacity: 0.6 !important;
         }
 
         .glowing-course-card:hover::before,
         .glowing-course-card:hover::after {
-          opacity: 1;
+          opacity: 1 !important;
         }
 
         @keyframes spin {
