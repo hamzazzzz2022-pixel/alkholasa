@@ -146,12 +146,21 @@ export default function DashboardPage() {
               {courses.map((course) => (
                 <div 
                   key={course.id}
-                  className="relative p-[3px] rounded-3xl hover:scale-[1.02] transition-all duration-300 shadow-xl"
-                  style={{
-                    background: 'linear-gradient(135deg, #ef4444, #f59e0b, #10b981, #06b6d4, #8b5cf6, #ec4899)'
-                  }}
+                  className="relative p-[3px] rounded-3xl hover:scale-[1.02] transition-all duration-300 shadow-xl overflow-hidden"
                 >
-                  <div className="bg-[#0f1428] rounded-[22px] p-6 flex flex-col justify-between min-h-[220px] text-slate-100 h-full">
+                  {/* عنصر خلفية متحركة للـ RGB */}
+                  <div 
+                    className="absolute inset-0 rounded-3xl opacity-90"
+                    style={{
+                      background: 'linear-gradient(60deg, #ff0055, #ffcc00, #00ff66, #00ffff, #0066ff, #cc00ff, #ff0055)',
+                      backgroundSize: '400% 400%',
+                      animation: 'rgb-move 4s ease infinite',
+                      zIndex: 0
+                    }}
+                  />
+
+                  {/* محتوى الكارت */}
+                  <div className="relative bg-[#0f1428] rounded-[22px] p-6 flex flex-col justify-between min-h-[220px] text-slate-100 h-full z-10">
                     <div className="space-y-2">
                       <span className="text-[10px] bg-cyan-500/15 text-cyan-400 px-2.5 py-1 rounded-full font-semibold inline-block">
                         {course.category}
@@ -167,6 +176,15 @@ export default function DashboardPage() {
                       دخول الكورس ➔
                     </Link>
                   </div>
+
+                  {/* تعريف الـ Animation مباشرة */}
+                  <style jsx global>{`
+                    @keyframes rgb-move {
+                      0% { background-position: 0% 50%; }
+                      50% { background-position: 100% 50%; }
+                      100% { background-position: 0% 50%; }
+                    }
+                  `}</style>
                 </div>
               ))}
             </div>
