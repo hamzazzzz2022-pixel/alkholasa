@@ -151,7 +151,7 @@ export default function DashboardPage() {
             </Link>
 
             <button onClick={handleLogout} className="bg-red-600/90 hover:bg-red-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-red-500/20 cursor-pointer">
-              خروج
+              تسجيل خروج
             </button>
           </div>
         </div>
