@@ -10,6 +10,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
@@ -25,6 +26,17 @@ export default function DashboardPage() {
         
         const currentUser = session.user;
         setUser(currentUser);
+
+        // جلب بيانات الملف الشخصي (الاسم والصورة) من جدول profiles
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+
+        if (profileData) {
+          setProfile(profileData);
+        }
 
         const { data: coursesData, error: coursesError } = await supabase
           .from('courses')
@@ -98,9 +110,20 @@ export default function DashboardPage() {
         
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-lg transition-colors duration-500 ease-in-out">
-          <div>
-            <h1 className="text-lg font-bold text-blue-600 dark:text-blue-500">منصة الخلاصة🎓</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">مرحباً بك، {user?.email}</p>
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-blue-500/40 bg-slate-800 flex items-center justify-center shrink-0">
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="صورة البروفايل" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-lg text-slate-400">👤</span>
+              )}
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-blue-600 dark:text-blue-500">منصة الخلاصة🎓</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                مرحباً، <span className="font-semibold text-slate-700 dark:text-slate-200">{profile?.full_name || user?.email}</span>
+              </p>
+            </div>
           </div>
           
           <div className="flex items-center flex-wrap gap-3">
@@ -148,7 +171,6 @@ export default function DashboardPage() {
                   key={course.id}
                   className="relative p-[3px] rounded-3xl hover:scale-[1.02] transition-all duration-300 shadow-xl overflow-hidden"
                 >
-                  {/* عنصر خلفية متحركة للـ RGB */}
                   <div 
                     className="absolute inset-0 rounded-3xl opacity-90"
                     style={{
@@ -159,7 +181,6 @@ export default function DashboardPage() {
                     }}
                   />
 
-                  {/* محتوى الكارت */}
                   <div className="relative bg-[#0f1428] rounded-[22px] p-6 flex flex-col justify-between min-h-[220px] text-slate-100 h-full z-10">
                     <div className="space-y-2">
                       <span className="text-[10px] bg-cyan-500/15 text-cyan-400 px-2.5 py-1 rounded-full font-semibold inline-block">
@@ -177,7 +198,6 @@ export default function DashboardPage() {
                     </Link>
                   </div>
 
-                  {/* تعريف الـ Animation مباشرة */}
                   <style jsx global>{`
                     @keyframes rgb-move {
                       0% { background-position: 0% 50%; }
