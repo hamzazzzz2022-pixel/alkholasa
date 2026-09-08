@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,22 +10,26 @@ export default function UpdatePasswordPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
-    // التقاط الـ tokens من الـ URL hash القادم من الإيميل
-    const hash = window.location.hash;
-    if (hash && hash.includes('access_token')) {
-      const params = new URLSearchParams(hash.replace('#', '?'));
-      const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
-
-      if (accessToken && refreshToken) {
-        supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
+    // الاستماع لحالة المصادقة والتأكد من التقاط الرمز القادم من البريد
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY' || session) {
+        setSessionReady(true);
       }
-    }
+    });
+
+    // التحقق الفوري لو الجلسة موجودة مسبقاً
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setSessionReady(true);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleUpdatePassword = async (e) => {
@@ -41,13 +44,13 @@ export default function UpdatePasswordPage() {
 
     if (error) {
       setErrorMessage('حدث خطأ أثناء تحديث كلمة المرور: ' + error.message);
+      setLoading(false);
     } else {
       setMessage('تم تحديث كلمة المرور بنجاح! جاري تحويلك لصفحة تسجيل الدخول...');
       setTimeout(() => {
         router.push('/login');
       }, 2000);
     }
-    setLoading(false);
   };
 
   return (
@@ -84,7 +87,6 @@ export default function UpdatePasswordPage() {
             />
           </div>
 
-          {/* تنبيه أخذ لقطة شاشة */}
           <div className="bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs p-3 rounded-xl text-center font-medium leading-relaxed">
             💡 <strong>تنبيه هام:</strong> يُرجى أخذ لقطة شاشة (Screenshot) لكلمة المرور الجديدة وحفظها في مكان آمن.
           </div>
