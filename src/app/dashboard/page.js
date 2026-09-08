@@ -108,10 +108,10 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 dir-rtl flex flex-col items-center transition-colors duration-500 ease-in-out">
       <div className="max-w-4xl w-full space-y-8">
         
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-3xl shadow-xl transition-colors duration-500 ease-in-out">
+        {/* Header مع هافور خفيف */}
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-3xl shadow-lg hover:shadow-xl hover:border-blue-500/30 transition-all duration-300 ease-in-out">
           <div className="flex items-center gap-3.5">
-            <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-blue-500/40 bg-slate-800 flex items-center justify-center shrink-0 shadow-md">
+            <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-blue-500/40 bg-slate-800 flex items-center justify-center shrink-0 shadow-md transition-transform duration-300 hover:scale-105">
               {profile?.avatar_url ? (
                 <img src={profile.avatar_url} alt="صورة البروفايل" className="w-full h-full object-cover" />
               ) : (
@@ -128,7 +128,7 @@ export default function DashboardPage() {
           </div>
           
           <div className="flex items-center flex-wrap gap-2.5">
-            <div className="bg-slate-100 dark:bg-slate-800/85 border border-orange-500/30 px-3 py-1.5 rounded-xl flex items-center gap-2 transition-colors duration-500">
+            <div className="bg-slate-100 dark:bg-slate-800/85 border border-orange-500/30 px-3 py-1.5 rounded-xl flex items-center gap-2 hover:border-orange-500/60 transition-colors duration-300">
               <span className="text-lg animate-bounce">🔥</span>
               <div>
                 <div className="text-[9px] text-slate-400 font-medium leading-none">سلسلة الحماس</div>
@@ -141,41 +141,41 @@ export default function DashboardPage() {
             <ThemeToggle /> 
 
             {user?.email === "hamzazzzz2022@gmail.com" && (
-              <Link href="/admin" className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors duration-300">
+              <Link href="/admin" className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20">
                 لوحة الإدارة 🛠️
               </Link>
             )}
 
-            <Link href="/profile" className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 rounded-xl transition-colors duration-300">
+            <Link href="/profile" className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 rounded-xl transition-all duration-300">
               الملف الشخصي 👤
             </Link>
 
-            <button onClick={handleLogout} className="bg-red-600/90 hover:bg-red-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-colors duration-300 cursor-pointer">
+            <button onClick={handleLogout} className="bg-red-600/90 hover:bg-red-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-red-500/20 cursor-pointer">
               خروج
             </button>
           </div>
         </div>
 
-        {/* Quick Details Overview */}
+        {/* Quick Details Overview مع هافور متميز */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm flex items-center gap-3">
-            <div className="p-3 bg-blue-500/10 text-blue-500 rounded-xl text-lg">📚</div>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm hover:shadow-md hover:border-blue-500/40 hover:-translate-y-1 transition-all duration-300 flex items-center gap-3 cursor-default">
+            <div className="p-3 bg-blue-500/10 text-blue-500 rounded-xl text-lg transition-transform duration-300 hover:scale-110">📚</div>
             <div>
               <p className="text-[11px] text-slate-500">إجمالي الدورات المتاحة</p>
               <p className="text-sm font-bold text-slate-800 dark:text-white">{courses.length} دورات</p>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm flex items-center gap-3">
-            <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl text-lg">✨</div>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm hover:shadow-md hover:border-emerald-500/40 hover:-translate-y-1 transition-all duration-300 flex items-center gap-3 cursor-default">
+            <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl text-lg transition-transform duration-300 hover:scale-110">✨</div>
             <div>
               <p className="text-[11px] text-slate-500">حالة الحساب</p>
               <p className="text-sm font-bold text-emerald-500">نشط ومفعل</p>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm flex items-center gap-3">
-            <div className="p-3 bg-purple-500/10 text-purple-500 rounded-xl text-lg">🎯</div>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm hover:shadow-md hover:border-purple-500/40 hover:-translate-y-1 transition-all duration-300 flex items-center gap-3 cursor-default">
+            <div className="p-3 bg-purple-500/10 text-purple-500 rounded-xl text-lg transition-transform duration-300 hover:scale-110">🎯</div>
             <div>
               <p className="text-[11px] text-slate-500">الهدف اليومي</p>
               <p className="text-sm font-bold text-slate-800 dark:text-white">مستمر بلا توقف</p>
@@ -201,7 +201,7 @@ export default function DashboardPage() {
               {courses.map((course) => (
                 <div 
                   key={course.id}
-                  className="relative p-[3px] rounded-3xl hover:scale-[1.02] transition-all duration-300 shadow-xl overflow-hidden"
+                  className="relative p-[3px] rounded-3xl hover:scale-[1.03] hover:-translate-y-1.5 transition-all duration-300 shadow-xl overflow-hidden group"
                 >
                   <div 
                     className="absolute inset-0 rounded-3xl opacity-90"
@@ -213,18 +213,18 @@ export default function DashboardPage() {
                     }}
                   />
 
-                  <div className="relative bg-[#0f1428] rounded-[22px] p-6 flex flex-col justify-between min-h-[220px] text-slate-100 h-full z-10">
+                  <div className="relative bg-[#0f1428] rounded-[22px] p-6 flex flex-col justify-between min-h-[220px] text-slate-100 h-full z-10 group-hover:bg-[#131b36] transition-colors duration-300">
                     <div className="space-y-2">
                       <span className="text-[10px] bg-cyan-500/15 text-cyan-400 px-2.5 py-1 rounded-full font-semibold inline-block">
                         {course.category}
                       </span>
-                      <h3 className="text-lg font-bold text-white">{course.title}</h3>
+                      <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors duration-300">{course.title}</h3>
                       <p className="text-xs text-slate-300 line-clamp-2">{course.description}</p>
                     </div>
                     
                     <Link 
                       href={`/course?id=${course.id}`} 
-                      className="block text-center w-full py-2.5 mt-4 bg-gradient-to-r from-cyan-400 to-indigo-500 hover:opacity-90 text-slate-950 font-bold rounded-xl text-xs transition-all duration-300"
+                      className="block text-center w-full py-2.5 mt-4 bg-gradient-to-r from-cyan-400 to-indigo-500 hover:from-cyan-300 hover:to-indigo-400 text-slate-950 font-bold rounded-xl text-xs transition-all duration-300 shadow-md hover:shadow-cyan-500/30"
                     >
                       دخول الكورس ➔
                     </Link>
