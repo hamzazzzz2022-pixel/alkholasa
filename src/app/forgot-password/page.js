@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/supabase';
 
@@ -11,6 +10,27 @@ export default function UpdatePasswordPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    // التحقق من حالة الجلسة أو استقبال الـ recovery token من الرابط
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY' || session) {
+        setIsReady(true);
+      }
+    });
+
+    // فحص عام لو فيه جلسة مسجلة مسبقاً
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setIsReady(true);
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
@@ -25,9 +45,9 @@ export default function UpdatePasswordPage() {
     if (error) {
       setErrorMessage('حدث خطأ أثناء تحديث كلمة المرور: ' + error.message);
     } else {
-      setMessage('تم تحديث كلمة المرور بنجاح! جاري تحويلك لوحة التحكم...');
+      setMessage('تم تحديث كلمة المرور بنجاح! جاري تحويلك لتسجيل الدخول...');
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push('/login');
       }, 2000);
     }
     setLoading(false);
