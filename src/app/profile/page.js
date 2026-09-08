@@ -68,16 +68,16 @@ export default function ProfilePage() {
         const fileName = `${userId}-${Math.random()}.${fileExt}`;
         const filePath = `${fileName}`;
 
-        // رفع الصورة إلى Supabase Storage (تأكد أن اسم الـ bucket هو 'avatars')
+        // رفع الصورة إلى Supabase Storage باستخدام اسم الـ bucket الموجود عندك 'avatar'
         const { error: uploadError } = await supabase.storage
-          .from('avatars')
+          .from('avatar')
           .upload(filePath, file);
 
         if (uploadError) throw uploadError;
 
         // الحصول على الرابط العام للصورة
         const { data: { publicUrl } } = supabase.storage
-          .from('avatars')
+          .from('avatar')
           .getPublicUrl(filePath);
 
         newAvatarUrl = publicUrl;
