@@ -9,7 +9,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // حالة إظهار/إخفاء كلمة المرور
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -62,7 +62,6 @@ export default function LoginPage() {
           <div>
             <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1 font-semibold">كلمة المرور</label>
             
-            {/* الحقل الخاص بكلمة المرور مع زر العين */}
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -84,10 +83,20 @@ export default function LoginPage() {
             </div>
           </div>
 
+          {/* رابط نسيت كلمة المرور */}
+          <div className="flex items-center justify-end text-xs pt-1">
+            <Link 
+              href="/forgot-password" 
+              className="text-blue-600 dark:text-blue-400 hover:underline transition"
+            >
+              هل نسيت كلمة المرور؟
+            </Link>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-3 rounded-xl transition shadow-md shadow-blue-600/20 cursor-pointer disabled:opacity-50"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-3 rounded-xl transition shadow-md shadow-blue-600/25 cursor-pointer disabled:opacity-50"
           >
             {loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول ➔'}
           </button>
