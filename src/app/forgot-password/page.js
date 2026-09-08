@@ -1,54 +1,32 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/supabase';
+import Link from 'next/link';
 
-export default function UpdatePasswordPage() {
+export default function ForgotPasswordPage() {
   const router = useRouter();
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [isReady, setIsReady] = useState(false);
 
-  useEffect(() => {
-    // التحقق من حالة الجلسة أو استقبال الـ recovery token من الرابط
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'PASSWORD_RECOVERY' || session) {
-        setIsReady(true);
-      }
-    });
-
-    // فحص عام لو فيه جلسة مسجلة مسبقاً
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setIsReady(true);
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
-  const handleUpdatePassword = async (e) => {
+  const handleResetRequest = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMessage('');
     setMessage('');
 
-    const { error } = await supabase.auth.updateUser({
-      password: password,
+    // إرسال رابط الاستعادة إلى البريد الإلكتروني
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/update-password`,
     });
 
     if (error) {
-      setErrorMessage('حدث خطأ أثناء تحديث كلمة المرور: ' + error.message);
+      setErrorMessage('حدث خطأ: ' + error.message);
     } else {
-      setMessage('تم تحديث كلمة المرور بنجاح! جاري تحويلك لتسجيل الدخول...');
-      setTimeout(() => {
-        router.push('/login');
-      }, 2000);
+      setMessage('تم إرسال رابط الاستعادة إلى بريدك الإلكتروني بنجاح! تحقق من صندوق الوارد أو الـ Spam.');
     }
     setLoading(false);
   };
@@ -58,8 +36,8 @@ export default function UpdatePasswordPage() {
       <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
         
         <div className="text-center space-y-1">
-          <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-500">تحديث كلمة المرور 🔐</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">الرجاء إدخال كلمة المرور الجديدة لحسابك</p>
+          <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-500">استعادة كلمة المرور 🔑</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400">أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور</p>
         </div>
 
         {errorMessage && (
@@ -74,15 +52,15 @@ export default function UpdatePasswordPage() {
           </div>
         )}
 
-        <form onSubmit={handleUpdatePassword} className="space-y-4">
+        <form onSubmit={handleResetRequest} className="space-y-4">
           <div>
-            <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1 font-semibold">كلمة المرور الجديدة</label>
+            <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1 font-semibold">البريد الإلكتروني</label>
             <input
-              type="password"
+              type="email"
               required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="example@mail.com"
               className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs focus:outline-none focus:border-blue-500 transition"
             />
           </div>
@@ -92,9 +70,16 @@ export default function UpdatePasswordPage() {
             disabled={loading}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-3 rounded-xl transition shadow-md shadow-blue-600/25 cursor-pointer disabled:opacity-50"
           >
-            {loading ? 'جاري التحديث...' : 'حفظ كلمة المرور الجديدة'}
+            {loading ? 'جاري الإرسال...' : 'إرسال رابط الاستعادة ➔'}
           </button>
         </form>
+
+        <div className="text-center text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
+          تذكرت كلمة المرور؟{' '}
+          <Link href="/login" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
+            تسجيل الدخول
+          </Link>
+        </div>
 
       </div>
     </div>
