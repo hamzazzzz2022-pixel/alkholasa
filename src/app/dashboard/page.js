@@ -15,6 +15,10 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
 
+  // حالات الملخص الأسبوعي الحقيقية
+  const [weeklyStudyHours, setWeeklyStudyHours] = useState(0);
+  const [weeklyCompletedLessons, setWeeklyCompletedLessons] = useState(0);
+
   // حالات مؤقت التركيز (Pomodoro)
   const [pomodoroTime, setPomodoroTime] = useState(25 * 60);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -65,6 +69,7 @@ export default function DashboardPage() {
         const currentUser = session.user;
         setUser(currentUser);
 
+        // جلب الملف الشخصي
         const { data: profileData } = await supabase
           .from('profiles')
           .select('*')
@@ -75,6 +80,7 @@ export default function DashboardPage() {
           setProfile(profileData);
         }
 
+        // جلب الكورسات
         const { data: coursesData, error: coursesError } = await supabase
           .from('courses')
           .select('*')
@@ -84,6 +90,27 @@ export default function DashboardPage() {
           setCourses(coursesData);
         }
 
+        // جلب إحصائيات الملخص الأسبوعي الحقيقية
+        const todayDate = new Date();
+        const startOfWeek = new Date();
+        startOfWeek.setDate(todayDate.getDate() - 7);
+        const startOfWeekISO = startOfWeek.toISOString();
+
+        const { data: progressData, error: progressError } = await supabase
+          .from('student_progress')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .eq('is_completed', true)
+          .gte('completed_at', startOfWeekISO);
+
+        if (!progressError && progressData) {
+          setWeeklyCompletedLessons(progressData.length);
+          // افترضنا كل درس بيأخد تقريباً 30 دقيقة (0.5 ساعة) كمثال لحساب الساعات
+          const totalHours = (progressData.length * 0.5).toFixed(1);
+          setWeeklyStudyHours(totalHours);
+        }
+
+        // حساب الـ Streak (سلسلة الحماس)
         const today = new Date().toISOString().split('T')[0];
         let { data: streakData } = await supabase
           .from('user_streaks')
@@ -145,7 +172,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 dir-rtl flex flex-col items-center transition-colors duration-500 ease-in-out">
       <div className="max-w-4xl w-full space-y-8">
         
-        {/* Header مع تنظيم الأزرار بجانب بعضها */}
+        {/* Header */}
         <div className="flex flex-col lg:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-3xl shadow-lg hover:shadow-xl hover:border-blue-500/30 transition-all duration-300 ease-in-out">
           <div className="flex items-center gap-3.5">
             <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-blue-500/40 bg-slate-800 flex items-center justify-center shrink-0 shadow-md transition-transform duration-300 hover:scale-105">
@@ -193,7 +220,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Quick Details Overview (4 بطاقات تفصيلية) */}
+        {/* Quick Details Overview */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm hover:shadow-md hover:border-blue-500/40 hover:-translate-y-1 transition-all duration-300 flex items-center gap-3 cursor-default">
             <div className="p-3 bg-blue-500/10 text-blue-500 rounded-xl text-lg transition-transform duration-300 hover:scale-110">📚</div>
@@ -228,10 +255,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* قسم الميزات الجديدة: مؤقت التركيز + الملخص الأسبوعي التفاعلي */}
+        {/* مؤقت التركيز + الملخص الأسبوعي (بالبيانات الحقيقية) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
-          {/* مؤقت التركيز (Pomodoro Timer) */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-lg flex flex-col justify-between">
             <div className="flex justify-between items-center mb-4">
               <div>
@@ -267,26 +293,26 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* الملخص الأسبوعي (Weekly Summary Card) */}
+          {/* الملخص الأسبوعي بالبيانات الحقيقية */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-lg flex flex-col justify-between">
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-sm font-bold text-slate-800 dark:text-white">ملخص الإنجاز الأسبوعي 📈</h3>
-              <span className="text-[10px] bg-purple-500/15 text-purple-500 px-2.5 py-1 rounded-full font-semibold">الأسبوع الحالي</span>
+              <span className="text-[10px] bg-purple-500/15 text-purple-500 px-2.5 py-1 rounded-full font-semibold">آخر 7 أيام</span>
             </div>
 
             <div className="space-y-3 my-2">
               <div className="flex justify-between items-center text-xs bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl">
-                <span className="text-slate-500">ساعات المذاكرة هذا الأسبوع</span>
-                <span className="font-bold text-slate-800 dark:text-white">6.5 ساعة</span>
+                <span className="text-slate-500">ساعات المذاكرة المقدرة</span>
+                <span className="font-bold text-slate-800 dark:text-white">{weeklyStudyHours} ساعة</span>
               </div>
               <div className="flex justify-between items-center text-xs bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl">
                 <span className="text-slate-500">الدروس المكتملة</span>
-                <span className="font-bold text-emerald-500">4 دروس</span>
+                <span className="font-bold text-emerald-500">{weeklyCompletedLessons} دروس</span>
               </div>
             </div>
 
             <p className="text-[11px] text-slate-500 text-center mt-2">
-              أنت تقترب من تحقيق هدفك الأسبوعي، استمر! ✨
+              هذه البيانات محسوبة بناءً على نشاطك الفعلي هذا الأسبوع ✨
             </p>
           </div>
 
