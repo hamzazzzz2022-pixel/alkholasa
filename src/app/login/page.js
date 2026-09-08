@@ -84,13 +84,18 @@ export default function LoginPage() {
           </div>
 
           {/* رابط نسيت كلمة المرور */}
-          <div className="flex items-center justify-end text-xs pt-1">
+          <div className="flex items-center justify-between text-xs pt-1">
             <Link 
               href="/forgot-password" 
               className="text-blue-600 dark:text-blue-400 hover:underline transition"
             >
               هل نسيت كلمة المرور؟
             </Link>
+          </div>
+
+          {/* تنبيه أخذ لقطة شاشة */}
+          <div className="bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs p-3 rounded-xl text-center font-medium leading-relaxed">
+            💡 <strong>تنبيه هام:</strong> يُرجى أخذ لقطة شاشة (Screenshot) لكلمة المرور أو حفظها في مكان آمن لضمان عدم فقدانها.
           </div>
 
           <button
@@ -101,6 +106,13 @@ export default function LoginPage() {
             {loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول ➔'}
           </button>
         </form>
+
+        <div className="text-center text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
+          ليس لديك حساب؟{' '}
+          <Link href="/signup" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
+            إنشاء حساب جديد
+          </Link>
+        </div>
 
       </div>
     </div>
