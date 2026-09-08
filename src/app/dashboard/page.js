@@ -108,8 +108,8 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 dir-rtl flex flex-col items-center transition-colors duration-500 ease-in-out">
       <div className="max-w-4xl w-full space-y-8">
         
-        {/* Header مع هافور خفيف */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-3xl shadow-lg hover:shadow-xl hover:border-blue-500/30 transition-all duration-300 ease-in-out">
+        {/* Header مع تنظيم الأزرار بجانب بعضها */}
+        <div className="flex flex-col lg:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-3xl shadow-lg hover:shadow-xl hover:border-blue-500/30 transition-all duration-300 ease-in-out">
           <div className="flex items-center gap-3.5">
             <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-blue-500/40 bg-slate-800 flex items-center justify-center shrink-0 shadow-md transition-transform duration-300 hover:scale-105">
               {profile?.avatar_url ? (
@@ -127,7 +127,7 @@ export default function DashboardPage() {
             </div>
           </div>
           
-          <div className="flex items-center flex-wrap gap-2.5">
+          <div className="flex items-center flex-wrap justify-center gap-2.5">
             <div className="bg-slate-100 dark:bg-slate-800/85 border border-orange-500/30 px-3 py-1.5 rounded-xl flex items-center gap-2 hover:border-orange-500/60 transition-colors duration-300">
               <span className="text-lg animate-bounce">🔥</span>
               <div>
@@ -141,16 +141,16 @@ export default function DashboardPage() {
             <ThemeToggle /> 
 
             {user?.email === "hamzazzzz2022@gmail.com" && (
-              <Link href="/admin" className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20">
+              <Link href="/admin" className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 whitespace-nowrap">
                 لوحة الإدارة 🛠️
               </Link>
             )}
 
-            <Link href="/profile" className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 rounded-xl transition-all duration-300">
+            <Link href="/profile" className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl transition-all duration-300 whitespace-nowrap">
               الملف الشخصي 👤
             </Link>
 
-            <button onClick={handleLogout} className="bg-red-600/90 hover:bg-red-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-red-500/20 cursor-pointer">
+            <button onClick={handleLogout} className="bg-red-600/90 hover:bg-red-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-red-500/20 cursor-pointer whitespace-nowrap">
               تسجيل خروج
             </button>
           </div>
