@@ -233,10 +233,10 @@ export default function ProfilePage() {
 
       </div>
 
-      {/* نافذة منبثقة (Modal) ناعمة واحترافية في المنتصف */}
+      {/* نافذة منبثقة (Modal) بنعومة تامة وانيميشن انسيابي */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 transition-opacity duration-300 animate-[fadeIn_0.2s_ease-out]">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center transform transition-all duration-300 animate-[scaleUp_0.2s_ease-out]">
             <div className="w-12 h-12 bg-red-500/10 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl">
               ⚠️
             </div>
@@ -264,6 +264,17 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {/* تعريف حركات التلاشي والتكبير الناعمة */}
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes scaleUp {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
     </div>
   );
 }
