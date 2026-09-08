@@ -16,6 +16,9 @@ export default function ProfilePage() {
   const [userEmail, setUserEmail] = useState('');
   const [userId, setUserId] = useState('');
 
+  // حالة التحكم في ظهور بوب أب الحذف
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
   // جلب بيانات المستخدم الحالية عند فتح الصفحة
   useEffect(() => {
     async function getProfile() {
@@ -29,7 +32,6 @@ export default function ProfilePage() {
         setUserId(user.id);
         setUserEmail(user.email);
 
-        // جلب البيانات من جدول profiles
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('full_name, avatar_url')
@@ -62,20 +64,17 @@ export default function ProfilePage() {
       const fileInput = document.getElementById('avatar-file');
       const file = fileInput?.files?.[0];
 
-      // إذا قام المستخدم باختيار صورة جديدة من الجهاز
       if (file) {
         const fileExt = file.name.split('.').pop();
         const fileName = `${userId}-${Math.random()}.${fileExt}`;
         const filePath = `${fileName}`;
 
-        // رفع الصورة إلى Supabase Storage باستخدام اسم الـ bucket الموجود عندك 'avatar'
         const { error: uploadError } = await supabase.storage
           .from('avatar')
           .upload(filePath, file);
 
         if (uploadError) throw uploadError;
 
-        // الحصول على الرابط العام للصورة
         const { data: { publicUrl } } = supabase.storage
           .from('avatar')
           .getPublicUrl(filePath);
@@ -83,7 +82,6 @@ export default function ProfilePage() {
         newAvatarUrl = publicUrl;
       }
 
-      // تحديث بيانات جدول profiles
       const { error: updateError } = await supabase
         .from('profiles')
         .upsert({
@@ -105,9 +103,9 @@ export default function ProfilePage() {
     }
   };
 
-  // زر حذف الصورة الشخصية
-  const handleDeleteAvatar = async () => {
-    if (!confirm('هل أنت متأكد من حذف صورتك الشخصية؟')) return;
+  // تنفيذ حذف الصورة الشخصية فعلياً
+  const confirmDeleteAvatar = async () => {
+    setShowConfirmModal(false);
     setSaving(true);
     setMessage('');
     setErrorMessage('');
@@ -138,7 +136,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 dir-rtl flex items-center justify-center">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 dir-rtl flex items-center justify-center relative">
       <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
         
         <div className="text-center space-y-1">
@@ -173,7 +171,7 @@ export default function ProfilePage() {
             {avatarUrl && (
               <button
                 type="button"
-                onClick={handleDeleteAvatar}
+                onClick={() => setShowConfirmModal(true)}
                 disabled={saving}
                 className="text-red-500 hover:text-red-700 text-xs font-semibold transition cursor-pointer"
               >
@@ -205,7 +203,7 @@ export default function ProfilePage() {
             />
           </div>
 
-          {/* البريد الإلكتروني (للعرض فقط) */}
+          {/* البريد الإلكتروني */}
           <div>
             <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1 font-semibold">البريد الإلكتروني</label>
             <input
@@ -234,6 +232,38 @@ export default function ProfilePage() {
         </button>
 
       </div>
+
+      {/* نافذة منبثقة (Modal) ناعمة واحترافية في المنتصف */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
+            <div className="w-12 h-12 bg-red-500/10 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl">
+              ⚠️
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">تأكيد حذف الصورة الشخصية</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">هل أنت متأكد من رغبتك في حذف صورتك الشخصية الحالية؟ لا يمكن التراجع عن هذا الإجراء.</p>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold py-2.5 rounded-xl transition cursor-pointer"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteAvatar}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2.5 rounded-xl transition shadow-md cursor-pointer"
+              >
+                نعم، احذف
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
