@@ -228,7 +228,7 @@ export default function ProfilePage() {
           onClick={() => router.push('/dashboard')}
           className="w-full bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold py-3 rounded-xl transition"
         >
-          العودة لوحة التحكم ➔
+          العودة الي الصفحة الرئيسية ➔
         </button>
 
       </div>
