@@ -65,23 +65,37 @@ export default function ProfilePage() {
       const file = fileInput?.files?.[0];
 
       if (file) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${userId}-${Math.random()}.${fileExt}`;
+        // التحقق من حجم الصورة (أقصى حد 3 ميجابايت مثلاً لتجنب Failed to fetch)
+        if (file.size > 3 * 1024 * 1024) {
+          throw new Error('حجم الصورة كبير جداً. يجيب أن تكون الصورة أصغر من 3 ميجابايت.');
+        }
+
+        const fileExt = file.name.split('.').pop() || 'jpg';
+        const fileName = `${userId}-${Date.now()}.${fileExt}`;
         const filePath = `${fileName}`;
 
+        // رفع الصورة إلى Supabase Storage
         const { error: uploadError } = await supabase.storage
           .from('avatar')
-          .upload(filePath, file);
+          .upload(filePath, file, { upsert: true });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          throw new Error(uploadError.message);
+        }
 
-        const { data: { publicUrl } } = supabase.storage
+        // الحصول على الرابط العام للصورة
+        const { data: publicUrlData } = supabase.storage
           .from('avatar')
           .getPublicUrl(filePath);
 
-        newAvatarUrl = publicUrl;
+        if (!publicUrlData?.publicUrl) {
+          throw new Error('فشل في جلب رابط الصورة العام');
+        }
+
+        newAvatarUrl = publicUrlData.publicUrl;
       }
 
+      // تحديث بيانات جدول profiles
       const { error: updateError } = await supabase
         .from('profiles')
         .upsert({
@@ -97,7 +111,7 @@ export default function ProfilePage() {
       setMessage('تم تحديث الملف الشخصي بنجاح! ✨');
       if (fileInput) fileInput.value = '';
     } catch (error) {
-      setErrorMessage('حدث خطأ أثناء التحديث: ' + error.message);
+      setErrorMessage(error.message || 'حدث خطأ غير متوقع أثناء رفع الصورة.');
     } finally {
       setSaving(false);
     }
@@ -228,14 +242,14 @@ export default function ProfilePage() {
           onClick={() => router.push('/dashboard')}
           className="w-full bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold py-3 rounded-xl transition"
         >
-          العودة الي الصفحة الرئيسية ➔
+          العودة لوحة التحكم ➔
         </button>
 
       </div>
 
-      {/* نافذة منبثقة (Modal) بنعومة تامة وانيميشن انسيابي */}
+      {/* نافذة منبثقة لتأكيد الحذف بانيميشن ناعم */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 transition-opacity duration-300 animate-[fadeIn_0.2s_ease-out]">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-[fadeIn_0.2s_ease-out]">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center transform transition-all duration-300 animate-[scaleUp_0.2s_ease-out]">
             <div className="w-12 h-12 bg-red-500/10 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl">
               ⚠️
@@ -264,7 +278,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* تعريف حركات التلاشي والتكبير الناعمة */}
       <style jsx global>{`
         @keyframes fadeIn {
           from { opacity: 0; }
