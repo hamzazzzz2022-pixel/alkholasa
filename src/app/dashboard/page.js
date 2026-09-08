@@ -15,6 +15,44 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
 
+  // حالات مؤقت التركيز (Pomodoro)
+  const [pomodoroTime, setPomodoroTime] = useState(25 * 60);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [timerMode, setTimerMode] = useState('work'); // 'work' or 'break'
+
+  useEffect(() => {
+    let timer;
+    if (isTimerRunning && pomodoroTime > 0) {
+      timer = setInterval(() => {
+        setPomodoroTime((prev) => prev - 1);
+      }, 1000);
+    } else if (pomodoroTime === 0) {
+      if (timerMode === 'work') {
+        alert('انتهت جلسة المذاكرة! خذ استراحة قصيرة 5 دقائق ☕');
+        setPomodoroTime(5 * 60);
+        setTimerMode('break');
+      } else {
+        alert('انتهت الاستراحة! عودة للمذاكرة 🚀');
+        setPomodoroTime(25 * 60);
+        setTimerMode('work');
+      }
+      setIsTimerRunning(false);
+    }
+    return () => clearInterval(timer);
+  }, [isTimerRunning, pomodoroTime, timerMode]);
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const toggleTimer = () => setIsTimerRunning(!isTimerRunning);
+  const resetTimer = () => {
+    setIsTimerRunning(false);
+    setPomodoroTime(timerMode === 'work' ? 25 * 60 : 5 * 60);
+  };
+
   useEffect(() => {
     const fetchUserDataAndCourses = async () => {
       try {
@@ -27,7 +65,6 @@ export default function DashboardPage() {
         const currentUser = session.user;
         setUser(currentUser);
 
-        // جلب بيانات الملف الشخصي (الاسم والصورة) من جدول profiles
         const { data: profileData } = await supabase
           .from('profiles')
           .select('*')
@@ -156,13 +193,13 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Quick Details Overview مع هافور متميز */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Quick Details Overview (4 بطاقات تفصيلية) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm hover:shadow-md hover:border-blue-500/40 hover:-translate-y-1 transition-all duration-300 flex items-center gap-3 cursor-default">
             <div className="p-3 bg-blue-500/10 text-blue-500 rounded-xl text-lg transition-transform duration-300 hover:scale-110">📚</div>
             <div>
-              <p className="text-[11px] text-slate-500">إجمالي الدورات المتاحة</p>
-              <p className="text-sm font-bold text-slate-800 dark:text-white">{courses.length} دورات</p>
+              <p className="text-[11px] text-slate-500">إجمالي الدورات</p>
+              <p className="text-sm font-bold text-slate-800 dark:text-white">{courses.length} دورات متاحة</p>
             </div>
           </div>
 
@@ -170,7 +207,7 @@ export default function DashboardPage() {
             <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl text-lg transition-transform duration-300 hover:scale-110">✨</div>
             <div>
               <p className="text-[11px] text-slate-500">حالة الحساب</p>
-              <p className="text-sm font-bold text-emerald-500">نشط ومفعل</p>
+              <p className="text-sm font-bold text-emerald-500">نشط ومفعل كلياً</p>
             </div>
           </div>
 
@@ -181,6 +218,78 @@ export default function DashboardPage() {
               <p className="text-sm font-bold text-slate-800 dark:text-white">مستمر بلا توقف</p>
             </div>
           </div>
+
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm hover:shadow-md hover:border-amber-500/40 hover:-translate-y-1 transition-all duration-300 flex items-center gap-3 cursor-default">
+            <div className="p-3 bg-amber-500/10 text-amber-500 rounded-xl text-lg transition-transform duration-300 hover:scale-110">🚀</div>
+            <div>
+              <p className="text-[11px] text-slate-500">مستوى النشاط</p>
+              <p className="text-sm font-bold text-amber-500">ممتاز ومحفز</p>
+            </div>
+          </div>
+        </div>
+
+        {/* قسم الميزات الجديدة: مؤقت التركيز + الملخص الأسبوعي التفاعلي */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* مؤقت التركيز (Pomodoro Timer) */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-lg flex flex-col justify-between">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-white">مؤقت التركيز ⏱️</h3>
+                <p className="text-[11px] text-slate-500">
+                  {timerMode === 'work' ? 'وقت المذاكرة والتركيز العميق' : 'وقت الراحة والاسترخاء'}
+                </p>
+              </div>
+              <span className={`text-[10px] px-2.5 py-1 rounded-full font-semibold ${timerMode === 'work' ? 'bg-blue-500/15 text-blue-500' : 'bg-emerald-500/15 text-emerald-500'}`}>
+                {timerMode === 'work' ? 'جلسة عمل' : 'استراحة'}
+              </span>
+            </div>
+
+            <div className="text-center my-4">
+              <span className="text-4xl font-extrabold tracking-wider text-slate-900 dark:text-white font-mono">
+                {formatTime(pomodoroTime)}
+              </span>
+            </div>
+
+            <div className="flex gap-2">
+              <button 
+                onClick={toggleTimer}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${isTimerRunning ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
+              >
+                {isTimerRunning ? 'إيقاف مؤقت ⏸️' : 'ابدأ التركيز ▶️'}
+              </button>
+              <button 
+                onClick={resetTimer}
+                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors"
+              >
+                إعادة ضبط 🔄
+              </button>
+            </div>
+          </div>
+
+          {/* الملخص الأسبوعي (Weekly Summary Card) */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-lg flex flex-col justify-between">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white">ملخص الإنجاز الأسبوعي 📈</h3>
+              <span className="text-[10px] bg-purple-500/15 text-purple-500 px-2.5 py-1 rounded-full font-semibold">الأسبوع الحالي</span>
+            </div>
+
+            <div className="space-y-3 my-2">
+              <div className="flex justify-between items-center text-xs bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl">
+                <span className="text-slate-500">ساعات المذاكرة هذا الأسبوع</span>
+                <span className="font-bold text-slate-800 dark:text-white">6.5 ساعة</span>
+              </div>
+              <div className="flex justify-between items-center text-xs bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl">
+                <span className="text-slate-500">الدروس المكتملة</span>
+                <span className="font-bold text-emerald-500">4 دروس</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-500 text-center mt-2">
+              أنت تقترب من تحقيق هدفك الأسبوعي، استمر! ✨
+            </p>
+          </div>
+
         </div>
 
         {user && <StudentStats userId={user.id} />}
