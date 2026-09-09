@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/supabase';
 import Link from 'next/link';
+import * as tus from 'tus-js-client';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function AdminPage() {
   const [lessonTitle, setLessonTitle] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0); // نسبة الرفع المئوية
 
   // نموذج إضافة سؤال / كويز
   const [selectedLessonId, setSelectedLessonId] = useState('');
@@ -58,30 +60,68 @@ export default function AdminPage() {
     checkAdminAndFetch();
   }, [router]);
 
-  // دالة رفع الفيديو من الجهاز إلى Supabase Storage
+  // دالة رفع الفيديو باستخدام بروتوكول Tus (الرفع المتقطع السريع والآمن)
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     try {
       setUploadingVideo(true);
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
+      setUploadProgress(0);
 
-      // رفع الملف إلى الـ Bucket اللي سميناه lesson-videos
-      const { error: uploadError } = await supabase.storage
-        .from('lesson-videos')
-        .upload(filePath, file);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('يجب تسجيل الدخول أولاً');
 
-      if (uploadError) throw uploadError;
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const projectId = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1];
+      if (!projectId) throw new Error('رابط Supabase غير صحيح');
 
-      // جلب الرابط العام (Public URL) للفيديو
-      const { data } = supabase.storage
-        .from('lesson-videos')
-        .getPublicUrl(filePath);
+      const fileExt = file.name.split('.').pop() || 'mp4';
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const bucketName = 'lesson-videos';
 
-      setVideoUrl(data.publicUrl);
+      await new Promise((resolve, reject) => {
+        const upload = new tus.Upload(file, {
+          endpoint: `https://${projectId}.storage.supabase.co/storage/v1/upload/resumable`,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          headers: {
+            authorization: `Bearer ${session.access_token}`,
+            'x-upsert': 'true',
+          },
+          uploadDataDuringCreation: true,
+          removeFingerprintOnSuccess: true,
+          metadata: {
+            bucketName: bucketName,
+            objectName: fileName,
+            contentType: file.type || 'video/mp4',
+            cacheControl: '3600',
+          },
+          chunkSize: 6 * 1024 * 1024, // تقطيع الملف لأجزاء 6 ميجابايت لتفادي أخطاء الشبكة
+          onError: function (error) {
+            reject(error);
+          },
+          onProgress: function (bytesUploaded, bytesTotal) {
+            const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
+            setUploadProgress(percentage);
+          },
+          onSuccess: function () {
+            const { data: publicUrlData } = supabase.storage
+              .from(bucketName)
+              .getPublicUrl(fileName);
+            
+            setVideoUrl(publicUrlData.publicUrl);
+            resolve(publicUrlData.publicUrl);
+          },
+        });
+
+        upload.findPreviousUploads().then(function (previousUploads) {
+          if (previousUploads.length) {
+            upload.resumeFromPreviousUpload(previousUploads[0]);
+          }
+          upload.start();
+        });
+      });
+
       alert('تم رفع الفيديو من الجهاز بنجاح! 🚀');
     } catch (err) {
       console.error('خطأ في الرفع:', err.message);
@@ -130,7 +170,7 @@ export default function AdminPage() {
     }
   };
 
-  // إضافة اختبار/سؤال جديد للدرس (مُعدّلة ومحمية)
+  // إضافة اختبار/سؤال جديد للدرس
   const handleAddQuiz = async (e) => {
     e.preventDefault();
     if (!selectedLessonId || !quizQuestion || !option0 || !option1 || !option2 || !option3) {
@@ -139,7 +179,6 @@ export default function AdminPage() {
 
     const optionsArray = [option0, option1, option2, option3];
 
-    // حذف السؤال القديم إن وجد للدرس الحالي
     const { error: deleteError } = await supabase
       .from('quizzes')
       .delete()
@@ -149,7 +188,6 @@ export default function AdminPage() {
       console.error('خطأ عند حذف السؤال القديم:', deleteError.message);
     }
 
-    // إدراج السؤال الجديد
     const { error: insertError } = await supabase.from('quizzes').insert([
       {
         lesson_id: selectedLessonId,
@@ -175,7 +213,7 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center dir-rtl">
-        <p className="text-sm font-medium">جاري التحميل لوحة الإدارة...</p>
+        <p className="text-sm font-medium">جاري تحميل لوحة الإدارة...</p>
       </div>
     );
   }
@@ -236,7 +274,7 @@ export default function AdminPage() {
             </form>
           </div>
 
-          {/* 2. إضافة درس (مع دعم رفع فيديو من الجهاز أو يوتيوب) */}
+          {/* 2. إضافة درس */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-md space-y-4">
             <h2 className="text-base font-bold text-blue-600 dark:text-blue-400 border-b border-slate-100 dark:border-slate-800 pb-2">2. إضافة درس لكورس 🎬</h2>
             <form onSubmit={handleAddLesson} className="space-y-3">
@@ -263,7 +301,6 @@ export default function AdminPage() {
                 />
               </div>
 
-              {/* حقل إدخال رابط يوتيوب أو ظهور رابط الفيديو المرفوع */}
               <div>
                 <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">رابط الفيديو (أو ارفعه من جهازك بالأسفل)</label>
                 <input
@@ -275,7 +312,7 @@ export default function AdminPage() {
                 />
               </div>
 
-              {/* زر رفع الفيديو من الجهاز */}
+              {/* زر رفع الفيديو المتقطع */}
               <div>
                 <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">أو ارفع فيديو من جهازك:</label>
                 <input 
@@ -285,7 +322,11 @@ export default function AdminPage() {
                   disabled={uploadingVideo}
                   className="w-full text-xs text-slate-500 dark:text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 cursor-pointer"
                 />
-                {uploadingVideo && <p className="text-amber-500 text-xs mt-1 animate-pulse">جاري رفع الفيديو لمنصة التخزين، يرجى الانتظار...</p>}
+                {uploadingVideo && (
+                  <p className="text-amber-500 text-xs mt-1 animate-pulse font-bold">
+                    جاري رفع الفيديو: {uploadProgress}% ⏳ (يرجى الانتظار وعدم إغلاق الصفحة)
+                  </p>
+                )}
               </div>
 
               <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 rounded-xl transition">
