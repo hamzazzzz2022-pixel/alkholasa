@@ -12,7 +12,7 @@ export default function AdminPage() {
   const [courses, setCourses] = useState([]);
   const [lessons, setLessons] = useState([]);
 
-  // نظام الرسائل الناعم والمخصص بدلاً من alert المتصفح
+  // نظام الرسائل الناعم والمخصص
   const [statusMessage, setStatusMessage] = useState({ text: '', type: '' }); // type: 'success' | 'error' | 'loading'
 
   // نموذج إضافة كورس
@@ -61,7 +61,7 @@ export default function AdminPage() {
     checkAdminAndFetch();
   }, [router]);
 
-  // دالة رفع الفيديو باستخدام Tus مع تحديث حالة الرسالة الناعمة
+  // دالة رفع الفيديو باستخدام Tus مع تحديث الجلسة أوتوماتيك لضمان عدم انتهاء الصلاحية
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -69,10 +69,15 @@ export default function AdminPage() {
     try {
       setUploadingVideo(true);
       setUploadProgress(0);
-      setStatusMessage({ text: 'جاري تحضير ملف الفيديو للرفع المتقطع... ⏳', type: 'loading' });
+      setStatusMessage({ text: 'جاري تحديث الجلسة وتحضير ملف الفيديو للرفع... ⏳', type: 'loading' });
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('يجب تسجيل الدخول أولاً');
+      // تحديث الجلسة قبل الرفع لضمان صلاحية الـ Token ولتجنب خطأ exp claim timestamp
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      const currentSession = refreshData?.session || (await supabase.auth.getSession()).data.session;
+
+      if (refreshError || !currentSession) {
+        throw new Error('فشل تحديث الجلسة، يرجى تسجيل الدخول من جديد.');
+      }
 
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const projectId = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1];
@@ -87,7 +92,7 @@ export default function AdminPage() {
           endpoint: `https://${projectId}.storage.supabase.co/storage/v1/upload/resumable`,
           retryDelays: [0, 3000, 5000, 10000, 20000],
           headers: {
-            authorization: `Bearer ${session.access_token}`,
+            authorization: `Bearer ${currentSession.access_token}`,
             'x-upsert': 'true',
           },
           uploadDataDuringCreation: true,
@@ -240,7 +245,7 @@ export default function AdminPage() {
           </Link>
         </div>
 
-        {/* صندوق الرسائل الناعم والمخصص (بدل alert) */}
+        {/* صندوق الرسائل الناعم والمخصص */}
         {statusMessage.text && (
           <div className={`p-3 rounded-xl text-xs font-medium transition-all duration-300 shadow-sm border flex items-center justify-between ${
             statusMessage.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
@@ -250,7 +255,7 @@ export default function AdminPage() {
             <span>{statusMessage.text}</span>
             <button 
               onClick={() => setStatusMessage({ text: '', type: '' })} 
-              className="text-slate-400 hover:text-slate-200 font-bold px-1.5 text-sm"
+              className="text-slate-400 hover:text-slate-200 font-bold px-1.5 text-sm cursor-pointer"
             >
               ×
             </button>
