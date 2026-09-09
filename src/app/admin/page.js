@@ -12,6 +12,9 @@ export default function AdminPage() {
   const [courses, setCourses] = useState([]);
   const [lessons, setLessons] = useState([]);
 
+  // نظام الرسائل الناعم والمخصص بدلاً من alert المتصفح
+  const [statusMessage, setStatusMessage] = useState({ text: '', type: '' }); // type: 'success' | 'error' | 'loading'
+
   // نموذج إضافة كورس
   const [courseTitle, setCourseTitle] = useState('');
   const [courseCategory, setCourseCategory] = useState('');
@@ -22,7 +25,7 @@ export default function AdminPage() {
   const [lessonTitle, setLessonTitle] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [uploadingVideo, setUploadingVideo] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0); // نسبة الرفع المئوية
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // نموذج إضافة سؤال / كويز
   const [selectedLessonId, setSelectedLessonId] = useState('');
@@ -37,13 +40,11 @@ export default function AdminPage() {
     const checkAdminAndFetch = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
-      // حماية لوحة الإدارة للمشرف فقط
       if (!session || session.user.email !== 'hamzazzzz2022@gmail.com') {
         router.push('/dashboard');
         return;
       }
 
-      // جلب الكورسات والدروس
       const { data: coursesData } = await supabase.from('courses').select('*').order('id', { ascending: true });
       const { data: lessonsData } = await supabase.from('lessons').select('*').order('id', { ascending: true });
 
@@ -60,7 +61,7 @@ export default function AdminPage() {
     checkAdminAndFetch();
   }, [router]);
 
-  // دالة رفع الفيديو باستخدام بروتوكول Tus (الرفع المتقطع السريع والآمن)
+  // دالة رفع الفيديو باستخدام Tus مع تحديث حالة الرسالة الناعمة
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -68,6 +69,7 @@ export default function AdminPage() {
     try {
       setUploadingVideo(true);
       setUploadProgress(0);
+      setStatusMessage({ text: 'جاري تحضير ملف الفيديو للرفع المتقطع... ⏳', type: 'loading' });
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('يجب تسجيل الدخول أولاً');
@@ -96,13 +98,14 @@ export default function AdminPage() {
             contentType: file.type || 'video/mp4',
             cacheControl: '3600',
           },
-          chunkSize: 6 * 1024 * 1024, // تقطيع الملف لأجزاء 6 ميجابايت لتفادي أخطاء الشبكة
+          chunkSize: 6 * 1024 * 1024,
           onError: function (error) {
             reject(error);
           },
           onProgress: function (bytesUploaded, bytesTotal) {
             const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
             setUploadProgress(percentage);
+            setStatusMessage({ text: `جاري رفع الفيديو: ${percentage}% ⏳ (لا تغلق الصفحة)`, type: 'loading' });
           },
           onSuccess: function () {
             const { data: publicUrlData } = supabase.storage
@@ -122,10 +125,10 @@ export default function AdminPage() {
         });
       });
 
-      alert('تم رفع الفيديو من الجهاز بنجاح! 🚀');
+      setStatusMessage({ text: 'تم رفع الفيديو من الجهاز بنجاح! 🚀', type: 'success' });
     } catch (err) {
       console.error('خطأ في الرفع:', err.message);
-      alert('حدث خطأ أثناء رفع الفيديو: ' + err.message);
+      setStatusMessage({ text: 'حدث خطأ أثناء رفع الفيديو: ' + err.message, type: 'error' });
     } finally {
       setUploadingVideo(false);
     }
@@ -134,7 +137,9 @@ export default function AdminPage() {
   // إضافة كورس جديد
   const handleAddCourse = async (e) => {
     e.preventDefault();
-    if (!courseTitle || !courseCategory) return alert('الرجاء إدخال اسم الكورس والقسم');
+    if (!courseTitle || !courseCategory) {
+      return setStatusMessage({ text: 'الرجاء إدخال اسم الكورس والقسم ⚠️', type: 'error' });
+    }
 
     const { data, error } = await supabase.from('courses').insert([
       { title: courseTitle, category: courseCategory, description: courseDescription }
@@ -145,16 +150,18 @@ export default function AdminPage() {
       setCourseTitle('');
       setCourseCategory('');
       setCourseDescription('');
-      alert('تم إضافة الكورس بنجاح! 🎉');
+      setStatusMessage({ text: 'تم إضافة الكورس بنجاح! 🎉', type: 'success' });
     } else {
-      alert('حدث خطأ: ' + error.message);
+      setStatusMessage({ text: 'حدث خطأ: ' + error.message, type: 'error' });
     }
   };
 
   // إضافة درس جديد
   const handleAddLesson = async (e) => {
     e.preventDefault();
-    if (!selectedCourseId || !lessonTitle || !videoUrl) return alert('الرجاء ملء جميع الحقول المطلوبة (عنوان الدرس ورابط أو ملف الفيديو)');
+    if (!selectedCourseId || !lessonTitle || !videoUrl) {
+      return setStatusMessage({ text: 'الرجاء ملء جميع الحقول المطلوبة (عنوان الدرس ورابط أو ملف الفيديو) ⚠️', type: 'error' });
+    }
 
     const { data, error } = await supabase.from('lessons').insert([
       { course_id: selectedCourseId, title: lessonTitle, video_url: videoUrl }
@@ -164,9 +171,9 @@ export default function AdminPage() {
       setLessons([...lessons, data[0]]);
       setLessonTitle('');
       setVideoUrl('');
-      alert('تم إضافة الدرس بنجاح! 🎬');
+      setStatusMessage({ text: 'تم إضافة الدرس بنجاح! 🎬', type: 'success' });
     } else {
-      alert('حدث خطأ: ' + error.message);
+      setStatusMessage({ text: 'حدث خطأ: ' + error.message, type: 'error' });
     }
   };
 
@@ -174,7 +181,7 @@ export default function AdminPage() {
   const handleAddQuiz = async (e) => {
     e.preventDefault();
     if (!selectedLessonId || !quizQuestion || !option0 || !option1 || !option2 || !option3) {
-      return alert('الرجاء إدخال السؤال وجميع الخيارات الأربعة');
+      return setStatusMessage({ text: 'الرجاء إدخال السؤال وجميع الخيارات الأربعة ⚠️', type: 'error' });
     }
 
     const optionsArray = [option0, option1, option2, option3];
@@ -203,10 +210,10 @@ export default function AdminPage() {
       setOption1('');
       setOption2('');
       setOption3('');
-      alert('تم حفظ السؤال وتحديث اختبار الدرس بنجاح! 📝');
+      setStatusMessage({ text: 'تم حفظ السؤال وتحديث اختبار الدرس بنجاح! 📝', type: 'success' });
     } else {
       console.error('خطأ Supabase:', insertError);
-      alert('حدث خطأ أثناء حفظ السؤال: ' + insertError.message);
+      setStatusMessage({ text: 'حدث خطأ أثناء حفظ السؤال: ' + insertError.message, type: 'error' });
     }
   };
 
@@ -220,7 +227,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 dir-rtl flex flex-col items-center">
-      <div className="max-w-4xl w-full space-y-8">
+      <div className="max-w-4xl w-full space-y-6">
         
         {/* Header */}
         <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-4">
@@ -232,6 +239,23 @@ export default function AdminPage() {
             العودة للوحة التحكم ➔
           </Link>
         </div>
+
+        {/* صندوق الرسائل الناعم والمخصص (بدل alert) */}
+        {statusMessage.text && (
+          <div className={`p-3 rounded-xl text-xs font-medium transition-all duration-300 shadow-sm border flex items-center justify-between ${
+            statusMessage.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
+            statusMessage.type === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' :
+            'bg-amber-500/10 border-amber-500/20 text-amber-500 animate-pulse'
+          }`}>
+            <span>{statusMessage.text}</span>
+            <button 
+              onClick={() => setStatusMessage({ text: '', type: '' })} 
+              className="text-slate-400 hover:text-slate-200 font-bold px-1.5 text-sm"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
@@ -268,7 +292,7 @@ export default function AdminPage() {
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-xs focus:outline-none focus:border-blue-500 h-20"
                 ></textarea>
               </div>
-              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 rounded-xl transition">
+              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 rounded-xl transition cursor-pointer">
                 حفظ الكورس ✨
               </button>
             </form>
@@ -312,7 +336,6 @@ export default function AdminPage() {
                 />
               </div>
 
-              {/* زر رفع الفيديو المتقطع */}
               <div>
                 <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">أو ارفع فيديو من جهازك:</label>
                 <input 
@@ -322,14 +345,9 @@ export default function AdminPage() {
                   disabled={uploadingVideo}
                   className="w-full text-xs text-slate-500 dark:text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 cursor-pointer"
                 />
-                {uploadingVideo && (
-                  <p className="text-amber-500 text-xs mt-1 animate-pulse font-bold">
-                    جاري رفع الفيديو: {uploadProgress}% ⏳ (يرجى الانتظار وعدم إغلاق الصفحة)
-                  </p>
-                )}
               </div>
 
-              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 rounded-xl transition">
+              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 rounded-xl transition cursor-pointer">
                 حفظ الدرس 🎥
               </button>
             </form>
